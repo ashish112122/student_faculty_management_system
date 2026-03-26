@@ -5,23 +5,25 @@ import jwt
 import datetime
 from functools import wraps
 import os
+from config import Config
 
 app = Flask(__name__)
 
 # Enable CORS for all routes - simple and permissive for development
 CORS(app)
 
-app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
+app.config['SECRET_KEY'] = Config.SECRET_KEY
 
 DB_CONFIG = {
-    'user': 'system',
-    'password': 'Vanshi@Oracle1',
-    'dsn': 'localhost:1521/XE'
+    'user': Config.DB_USER,
+    'password': Config.DB_PASSWORD,
+    'dsn': Config.DB_DSN
 }
 
 @app.route('/')
 def home():
     return "Backend running successfully"
+
 def get_db_connection():
     return oracledb.connect(**DB_CONFIG)
 
