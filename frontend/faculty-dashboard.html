@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="main-content">
+        <div class="header">
+            <h1>Faculty Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+        
+        <div style="padding: 50px; text-align: center;">
+            <h2>Faculty Module - Coming Soon</h2>
+            <p style="color: #666; margin-top: 20px;">This module will be implemented by Team Member 2</p>
+        </div>
+    </div>
+    
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
