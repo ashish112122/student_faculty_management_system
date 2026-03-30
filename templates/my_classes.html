@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Classes</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <style>
+    body { margin:0; background:#b0b8c1; font-family:sans-serif; min-height:100vh; }
+    .topbar { background:#5b6abf; color:white; padding:12px 24px; display:flex; align-items:center; gap:16px; }
+    .topbar a { color:white; text-decoration:none; font-size:14px; opacity:.85; }
+    .topbar a:hover { opacity:1; }
+    .topbar h5 { margin:0; font-weight:600; }
+    .btn-logout { background:#e05555; color:white; border:none; padding:6px 18px; border-radius:4px; font-size:14px; margin-left:auto; text-decoration:none; }
+    .content { max-width:1000px; margin:32px auto; padding:0 16px; }
+    .card-panel { background:#d0d5de; border-radius:8px; padding:24px; margin-bottom:20px; }
+    .card-panel h4 { color:#3d4db7; font-weight:700; margin-bottom:16px; }
+
+    /* Subject cards */
+    .subject-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+    .subject-card { background:#c4c9d4; border-radius:8px; padding:20px; cursor:pointer; transition:background .2s; border:2px solid transparent; }
+    .subject-card:hover { background:#b8bece; }
+    .subject-card.selected { border-color:#5b6abf; background:#bcc2d8; }
+    .subject-card h5 { color:#3d4db7; font-weight:700; margin-bottom:6px; font-size:15px; }
+    .subject-card p { color:#555; font-size:13px; margin:0; }
+
+    /* Analytics area */
+    .exam-selector { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+    .exam-btn { background:#c4c9d4; border:none; padding:7px 18px; border-radius:4px; font-size:13px; cursor:pointer; font-weight:600; color:#333; }
+    .exam-btn.active { background:#5b6abf; color:white; }
+    .stat-box { background:#c4c9d4; border-radius:6px; padding:14px 18px; text-align:center; flex:1; min-width:100px; }
+    .stat-box .val { font-size:24px; font-weight:700; color:#3d4db7; }
+    .stat-box .lbl { font-size:12px; color:#555; margin-top:2px; }
+    .tab-btn { background:#c4c9d4; border:none; padding:8px 18px; border-radius:4px; font-size:13px; cursor:pointer; font-weight:600; color:#333; }
+    .tab-btn.active { background:#5b6abf; color:white; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    thead tr { border-bottom:2px solid #9aa0b8; }
+    th { color:#333; font-weight:600; padding:10px 8px; text-align:left; }
+    td { padding:9px 8px; color:#222; border-bottom:1px solid #b8bece; }
+    .badge-grade { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:700; color:white; }
+    .g-A{background:#3a9e6e} .g-B{background:#5b6abf} .g-C{background:#3aabbb} .g-D{background:#d4a017} .g-F{background:#c0392b}
+  </style>
+</head>
+<body>
+
+<meta name="faculty-id" content="{{ faculty_id }}" />
+
+<div class="topbar">
+  <a href="/">← Back</a>
+  <h5 id="topbar-title">My Classes</h5>
+  <a href="/logout" class="btn-logout">Logout</a>
+</div>
+
+<div class="content">
+
+  <!-- Subject picker -->
+  <div class="card-panel" id="subject-picker">
+    <h4>Select a Subject</h4>
+    <div class="subject-grid" id="subject-grid">
+      <div style="color:#666;font-size:14px">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Analytics panel (hidden until subject selected) -->
+  <div id="analytics-panel" style="display:none">
+
+    <!-- Exam type selector -->
+    <div class="card-panel" style="padding:16px 24px">
+      <div class="exam-selector">
+        <span style="font-size:13px;font-weight:600;color:#333">Exam Type:</span>
+        <button class="exam-btn active" onclick="selectExam(this,'midterm')">Midterm</button>
+        <button class="exam-btn" onclick="selectExam(this,'final')">Final</button>
+        <button class="exam-btn" onclick="selectExam(this,'internal')">Internal</button>
+      </div>
+    </div>
+
+    <div id="no-data-msg" style="display:none;color:#555;font-size:14px;margin-bottom:16px;background:#d0d5de;padding:16px;border-radius:8px">
+      No marks data found for this subject and exam type.
+    </div>
+
+    <div id="data-section" style="display:none">
+
+      <!-- Stats -->
+      <div class="card-panel">
+        <h4 id="analytics-title">—</h4>
+        <div class="d-flex gap-3 flex-wrap">
+          <div class="stat-box"><div class="val" id="stat-avg">—</div><div class="lbl">Average</div></div>
+          <div class="stat-box"><div class="val" id="stat-median">—</div><div class="lbl">Median</div></div>
+          <div class="stat-box"><div class="val" id="stat-high">—</div><div class="lbl">Highest</div></div>
+          <div class="stat-box"><div class="val" id="stat-low">—</div><div class="lbl">Lowest</div></div>
+          <div class="stat-box"><div class="val" id="stat-total">—</div><div class="lbl">Students</div></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="card-panel">
+        <div class="d-flex gap-2 mb-3">
+          <button class="tab-btn active" onclick="switchTab(event,'ctab-charts')">Charts</button>
+          <button class="tab-btn" onclick="switchTab(event,'ctab-all')">All Students</button>
+          <button class="tab-btn" onclick="switchTab(event,'ctab-top')">Top Performers</button>
+          <button class="tab-btn" onclick="switchTab(event,'ctab-risk')">At Risk</button>
+        </div>
+
+        <div id="ctab-charts" class="tab-content active">
+          <div class="row g-3">
+            <div class="col-md-7">
+              <div style="background:#c4c9d4;border-radius:6px;padding:16px">
+                <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:10px">Marks Distribution</div>
+                <canvas id="curveChart" height="160"></canvas>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div style="background:#c4c9d4;border-radius:6px;padding:16px">
+                <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:10px">Grade Distribution</div>
+                <canvas id="gradeChart" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+          <div style="background:#c4c9d4;border-radius:6px;padding:16px;margin-top:12px">
+            <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:10px">Student Performance</div>
+            <canvas id="barChart" height="80"></canvas>
+          </div>
+        </div>
+
+        <div id="ctab-all" class="tab-content">
+          <table><thead><tr><th>#</th><th>Student</th><th>Marks</th><th>Grade</th></tr></thead>
+          <tbody id="tbody-all"></tbody></table>
+        </div>
+
+        <div id="ctab-top" class="tab-content">
+          <div style="font-size:13px;color:#3a9e6e;font-weight:600;margin-bottom:10px">Scoring 75 or above</div>
+          <table><thead><tr><th>#</th><th>Student</th><th>Marks</th><th>Grade</th></tr></thead>
+          <tbody id="tbody-top"></tbody></table>
+        </div>
+
+        <div id="ctab-risk" class="tab-content">
+          <div style="font-size:13px;color:#c0392b;font-weight:600;margin-bottom:10px">Scoring below 45</div>
+          <table><thead><tr><th>#</th><th>Student</th><th>Marks</th><th>Grade</th></tr></thead>
+          <tbody id="tbody-risk"></tbody></table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/static/classes.js"></script>
+</body>
+</html>
