@@ -1,0 +1,47 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.log
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sensitive configuration files with credentials
+backend/config.py
+backend/.env
+backend/test_connection.py
+backend/setup_simple.py
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Batch files with credentials
+SETUP_SIMPLE.bat
+SETUP_DATABASE_PYTHON.bat
+CHECK_DATABASE.bat
+TEST_LOGIN_ERROR.bat
+
+# Local wheel files
+*.whl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation with sensitive info
+*_SUMMARY.md
+*_COMPLETE.md
+DEBUG_*.md
+FIX_*.md
+DOWNLOAD_*.md
+INSTALL_*.bat
+
