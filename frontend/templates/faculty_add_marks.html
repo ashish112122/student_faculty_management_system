@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add / Update Marks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← Back</button>
+            <h1>Add / Update Marks</h1>
+        </div>
+
+        <!-- Step 1: Select Class -->
+        <div id="step-class" class="content-section">
+            <h2>Step 1: Select Your Class</h2>
+            <div id="class-grid" class="grid"></div>
+        </div>
+
+        <!-- Step 2: Select Student -->
+        <div id="step-student" class="content-section" style="display:none">
+            <h2>Step 2: Select Student</h2>
+            <p class="subtitle">Class: <span id="selected-class-name"></span></p>
+            <div id="student-list" class="list"></div>
+        </div>
+
+        <!-- Step 3: Add Marks -->
+        <div id="step-marks" class="content-section" style="display:none">
+            <h2>Step 3: Add / Update Marks</h2>
+            <p class="subtitle">
+                Student: <span id="selected-student-name"></span><br>
+                Class: <span id="marks-class-name"></span>
+            </p>
+            
+            <form id="marks-form" class="form">
+                <div class="form-group">
+                    <label>Assessment Type</label>
+                    <select id="assessment-type" required>
+                        <option value="">Select Assessment Type</option>
+                        <option value="MST">MST (Mid Semester Test)</option>
+                        <option value="EST">EST (End Semester Test)</option>
+                        <option value="Assignment">Assignment</option>
+                        <option value="Quiz">Quiz</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Marks Obtained</label>
+                    <input type="number" id="marks-obtained" min="0" max="100" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Maximum Marks</label>
+                    <input type="number" id="max-marks" value="100" min="1" max="100" required>
+                </div>
+                
+                <div id="message" class="message" style="display:none"></div>
+                
+                <button type="submit" class="btn-primary">Save Marks</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/faculty_add_marks.js') }}"></script>
+</body>
+</html>

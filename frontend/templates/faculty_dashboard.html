@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="profile-section">
+            <h2 id="faculty-name">Loading...</h2>
+            <p id="faculty-email"></p>
+            <div class="divider"></div>
+            <div class="info-row">
+                <span class="label">Faculty ID:</span>
+                <span id="faculty-id">-</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Department:</span>
+                <span id="faculty-dept">-</span>
+            </div>
+            <div class="divider"></div>
+            <div class="label">Classes Teaching:</div>
+            <div id="classes-list"></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Faculty Dashboard</h1>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card" onclick="location.href='/faculty/add-marks'">
+                <div class="card-icon">📝</div>
+                <h3>Add / Update Marks</h3>
+                <p>Enter or modify student marks</p>
+            </div>
+
+            <div class="card" onclick="location.href='/faculty/marks-report'">
+                <div class="card-icon">📊</div>
+                <h3>Marks Report</h3>
+                <p>View class performance and analytics</p>
+            </div>
+
+            <div class="card" onclick="location.href='/faculty/my-classes'">
+                <div class="card-icon">👥</div>
+                <h3>My Classes</h3>
+                <p>View students and their marks</p>
+            </div>
+
+            <div class="card" onclick="location.href='/faculty/feedback'">
+                <div class="card-icon">💬</div>
+                <h3>Student Feedback</h3>
+                <p>View and reply to student messages</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/faculty_dashboard.js') }}"></script>
+</body>
+</html>

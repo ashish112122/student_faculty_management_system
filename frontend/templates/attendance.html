@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/attendance.css') }}">
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn" onclick="location.href='/student/dashboard'">← Back</button>
+        <h1>Attendance</h1>
+    </div>
+    
+    <div class="content">
+        <div id="subjectList" class="subject-list"></div>
+        <div id="attendanceDetail" class="attendance-detail" style="display:none;">
+            <button class="back-btn" onclick="backToSubjects()" style="margin-bottom: 20px;">← Back to Subjects</button>
+            <h2 id="subjectName"></h2>
+            <div class="attendance-summary">
+                <div class="percentage-box">
+                    <h3 id="attendancePercentage">0%</h3>
+                    <p>Attendance</p>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+            <div class="attendance-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+</body>
+</html>

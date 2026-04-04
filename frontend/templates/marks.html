@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/marks.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn">← Back</button>
+        <h1>Marks</h1>
+    </div>
+    
+    <div class="content">
+        <div id="subjectList" class="subject-list"></div>
+        <div id="marksDetail" class="marks-detail" style="display:none;">
+            <button class="back-btn" onclick="backToSubjects()" style="margin-bottom: 20px;">← Back to Subjects</button>
+            <h2 id="subjectName"></h2>
+            <div class="marks-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Assessment</th>
+                            <th>Your Marks</th>
+                            <th>Class Average</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marksTableBody"></tbody>
+                </table>
+            </div>
+            <div class="charts">
+                <canvas id="marksChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/student_marks.js') }}"></script>
+</body>
+</html>

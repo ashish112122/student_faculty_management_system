@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div style="text-align: center;">
+                <h1 style="color: white; font-size: 48px; margin-bottom: 20px;">🎓</h1>
+                <h1 style="color: white; font-size: 36px;">Thapar University</h1>
+                <p style="color: rgba(255,255,255,0.8); font-size: 18px; margin-top: 10px;">Student Management System</p>
+            </div>
+        </div>
+        <div class="right-section">
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="email" id="email" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+            <div id="error-message" class="error"></div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

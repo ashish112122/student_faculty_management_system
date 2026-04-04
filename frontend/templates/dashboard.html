@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-content">
+            <h3 id="studentName">Loading...</h3>
+            <div class="student-info">
+                <p><strong>Student ID:</strong> <span id="studentId"></span></p>
+                <p><strong>Branch:</strong> <span id="branch"></span></p>
+                <p><strong>Year:</strong> <span id="year"></span></p>
+                <p><strong>Semester:</strong> <span id="semester"></span></p>
+                <p><strong>Section:</strong> <span id="section"></span></p>
+                <p><strong>CGPA:</strong> <span id="cgpa"></span></p>
+                <p><strong>Total Credits:</strong> <span id="totalCredits"></span></p>
+            </div>
+            <div class="subjects">
+                <h4>Current Subjects</h4>
+                <ul id="subjectList"></ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="header">
+            <button class="toggle-btn" id="toggleBtn">☰</button>
+            <h1>Student Dashboard</h1>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+        
+        <div class="dashboard-cards">
+            <div class="card" onclick="location.href='/student/marks'">
+                <h2>Marks</h2>
+                <p>View your academic performance</p>
+            </div>
+            <div class="card" onclick="location.href='/student/attendance'">
+                <h2>Attendance</h2>
+                <p>Track your attendance records</p>
+            </div>
+            <div class="card" onclick="location.href='/student/alerts'">
+                <h2>Alerts</h2>
+                <p>View important notifications</p>
+            </div>
+            <div class="card" onclick="location.href='/student/feedback'">
+                <h2>Feedback</h2>
+                <p>Communicate with faculty</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

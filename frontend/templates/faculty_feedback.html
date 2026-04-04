@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Feedback</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← Back</button>
+            <h1>Student Feedback</h1>
+        </div>
+
+        <!-- Class Selection -->
+        <div id="class-selection" class="content-section">
+            <h2>Select Your Class</h2>
+            <div id="class-grid" class="grid"></div>
+        </div>
+
+        <!-- Student Selection -->
+        <div id="student-selection" class="content-section" style="display:none">
+            <h2>Select Student</h2>
+            <p class="subtitle">Class: <span id="selected-class-name"></span></p>
+            <div id="student-list" class="list"></div>
+        </div>
+
+        <!-- Chat View -->
+        <div id="chat-view" class="content-section" style="display:none">
+            <h2>Chat with <span id="student-name"></span></h2>
+            <p class="subtitle">Class: <span id="chat-class-name"></span></p>
+            
+            <div class="chat-container">
+                <div id="messages-container" class="messages"></div>
+                <div class="chat-input">
+                    <textarea id="message-input" placeholder="Type your message..." rows="3"></textarea>
+                    <button onclick="sendMessage()" class="btn-primary">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/faculty_feedback.js') }}"></script>
+</body>
+</html>

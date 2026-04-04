@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Classes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faculty.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← Back</button>
+            <h1>My Classes</h1>
+        </div>
+
+        <!-- Class Selection -->
+        <div id="class-selection" class="content-section">
+            <h2>Select a Class</h2>
+            <div id="class-grid" class="grid"></div>
+        </div>
+
+        <!-- Class Details -->
+        <div id="class-details" class="content-section" style="display:none">
+            <h2 id="class-title"></h2>
+            
+            <!-- Assessment Type Selector -->
+            <div class="assessment-selector">
+                <button class="assessment-btn active" onclick="selectAssessment('MST')">MST</button>
+                <button class="assessment-btn" onclick="selectAssessment('EST')">EST</button>
+                <button class="assessment-btn" onclick="selectAssessment('Assignment')">Assignment</button>
+                <button class="assessment-btn" onclick="selectAssessment('Quiz')">Quiz</button>
+            </div>
+            
+            <div id="no-data" class="empty-message" style="display:none">No marks data for this assessment</div>
+            
+            <!-- Statistics -->
+            <div id="stats-section" style="display:none">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-avg">-</div>
+                        <div class="stat-label">Average</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-high">-</div>
+                        <div class="stat-label">Highest</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-low">-</div>
+                        <div class="stat-label">Lowest</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-total">-</div>
+                        <div class="stat-label">Students</div>
+                    </div>
+                </div>
+                
+                <!-- Chart -->
+                <div class="chart-container">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+                
+                <!-- Students Table -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student Name</th>
+                                <th>Branch</th>
+                                <th>Semester</th>
+                                <th>Marks</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/faculty_my_classes.js') }}"></script>
+</body>
+</html>
