@@ -3,52 +3,366 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Dashboard</title>
-    <link rel="stylesheet" href="static/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .user-info-header { text-align: right; }
+        .user-info-header p { margin: 2px 0; font-size: 14px; opacity: 0.9; }
+        .sidebar { position: fixed; left: 0; top: 60px; width: 250px; height: calc(100vh - 60px); background: #34495e; color: white; transform: translateX(-250px); transition: transform 0.3s; z-index: 100; box-shadow inset 2px 0 5px rgba(0,0,0,0.2); overflow-y: auto; }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar ul { list-style: none; padding: 1rem 0; }
+        .sidebar li { padding: 0; }
+        .sidebar a { display: block; padding: 1rem 1.5rem; color: white; text-decoration: none; transition: background 0.3s; border-left: 4px solid transparent; }
+        .sidebar a:hover { background: #2c3e50; border-left-color: #3498db; }
+        .sidebar-overlay { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 99; }
+        .sidebar-overlay.active { display: block; }
+        .container { margin-left: 0; padding: 2rem; }
+        .dashboard-info { background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .dashboard-info h2 { color: #2c3e50; margin-bottom: 1rem; }
+        .info-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .info-item { background: #ecf0f1; padding: 1rem; border-radius: 6px; }
+        .info-item label { display: block; font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 5px; }
+        .info-item value { display: block; font-size: 24px; font-weight: bold; color: #2c3e50; }
+        .boxes-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-top: 2rem; }
+        @media (max-width: 768px) { .boxes-container { grid-template-columns: 1fr; } }
+        .box { background: white; padding: 2rem; border-radius: 8px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .box:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .box h3 { color: #2c3e50; margin-bottom: 1rem; font-size: 24px; }
+        .box-icon { font-size: 48px; margin: 1rem 0; }
+        .box-desc { color: #7f8c8d; font-size: 14px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #2c3e50; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 2rem; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; width: 90%; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 1rem; }
+        .modal-header h2 { color: #2c3e50; }
+        #logout { background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
+        #logout:hover { background: #c0392b; }
+    </style>
 </head>
 <body>
     <header>
-        <h1>Student Dashboard</h1>
-        <nav><a href="#" id="logout">Logout</a></nav>
+        <button class="menu-btn" id="menu-toggle">☰</button>
+        <div class="user-info-header">
+            <p id="user-name">Student Name</p>
+            <p id="batch-info">Batch 2Q31</p>
+        </div>
+        <button id="logout">Logout</button>
     </header>
-    <div class="container">
-        <aside>
-            <ul>
-                <li><a href="#marks">Marks</a></li>
-                <li><a href="#attendance">Attendance</a></li>
-                <li><a href="#alerts">Alerts</a></li>
-                <li><a href="#feedback">Feedback</a></li>
-            </ul>
-        </aside>
-        <main>
-            <div id="overview">
-                <p>Semester: <span id="semester"></span></p>
-                <p>CGPA: <span id="cgpa"></span></p>
-                <p>Total Credits: <span id="credits"></span></p>
-            </div>
-            <div id="marks">
-                <h3>Marks</h3>
-                <table id="marks-table"></table>
-                <canvas id="marks-chart"></canvas>
-            </div>
-            <div id="attendance">
-                <h3>Attendance</h3>
-                <div id="attendance-bars"></div>
-            </div>
-            <div id="alerts">
-                <h3>Alerts</h3>
-                <ul id="alerts-list"></ul>
-            </div>
-            <div id="feedback">
-                <h3>Feedback</h3>
-                <form id="feedback-form">
-                    <textarea id="message" placeholder="Message"></textarea>
-                    <button type="submit">Send</button>
-                </form>
-                <ul id="feedback-list"></ul>
-            </div>
-        </main>
+    
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="#" onclick="closeSidebar()">Dashboard</a></li>
+            <li><a href="#" onclick="closeSidebar()">Marks</a></li>
+            <li><a href="#" onclick="closeSidebar()">Attendance</a></li>
+            <li><a href="#" onclick="closeSidebar()">Alerts</a></li>
+            <li><a href="#" onclick="closeSidebar()">Feedback</a></li>
+        </ul>
     </div>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    
+    <div class="container">
+        <div class="dashboard-info">
+            <h2>Welcome to Student Dashboard</h2>
+            <div class="info-row">
+                <div class="info-item">
+                    <label>Current Semester</label>
+                    <value id="semester">4</value>
+                </div>
+                <div class="info-item">
+                    <label>CGPA</label>
+                    <value id="cgpa">0.0</value>
+                </div>
+                <div class="info-item">
+                    <label>Total Credits</label>
+                    <value id="credits">0</value>
+                </div>
+            </div>
+        </div>
+        
+        <div class="boxes-container">
+            <div class="box" onclick="openMarksWindow()">
+                <div class="box-icon">📊</div>
+                <h3>Marks</h3>
+                <p class="box-desc">View your marks across subjects</p>
+            </div>
+            <div class="box" onclick="openAttendanceWindow()">
+                <div class="box-icon">📝</div>
+                <h3>Attendance</h3>
+                <p class="box-desc">Check your attendance records</p>
+            </div>
+            <div class="box" onclick="openAlertsWindow()">
+                <div class="box-icon">🔔</div>
+                <h3>Alerts</h3>
+                <p class="box-desc">View your alerts and notifications</p>
+            </div>
+            <div class="box" onclick="openFeedbackWindow()">
+                <div class="box-icon">💬</div>
+                <h3>Feedback</h3>
+                <p class="box-desc">Chat with your faculty</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Marks Modal -->
+    <div class="modal" id="marksModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Subject</h2>
+                <button class="close-btn" onclick="closeModal('marksModal')">✕</button>
+            </div>
+            <div id="subjectsForMarks"></div>
+        </div>
+    </div>
+    
+    <!-- Attendance Modal -->
+    <div class="modal" id="attendanceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Subject</h2>
+                <button class="close-btn" onclick="closeModal('attendanceModal')">✕</button>
+            </div>
+            <div id="subjectsForAttendance"></div>
+        </div>
+    </div>
+    
+    <!-- Alerts Modal -->
+    <div class="modal" id="alertsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Alerts</h2>
+                <button class="close-btn" onclick="closeModal('alertsModal')">✕</button>
+            </div>
+            <div id="alertsList"></div>
+        </div>
+    </div>
+    
+    <!-- Feedback Modal -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Subject for Feedback</h2>
+                <button class="close-btn" onclick="closeModal('feedbackModal')">✕</button>
+            </div>
+            <div id="subjectsForFeedback"></div>
+        </div>
+    </div>
+    
+    <!-- Marks Detail Modal -->
+    <div class="modal" id="marksDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="marksDetailTitle">Marks Detail</h2>
+                <button class="close-btn" onclick="backToSubjects('marksModal')">← Back</button>
+            </div>
+            <div id="marksDetailContent"></div>
+        </div>
+    </div>
+    
+    <!-- Attendance Detail Modal -->
+    <div class="modal" id="attendanceDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="attendanceDetailTitle">Attendance Detail</h2>
+                <button class="close-btn" onclick="backToSubjects('attendanceModal')">← Back</button>
+            </div>
+            <div id="attendanceDetailContent"></div>
+        </div>
+    </div>
+    
+    <!-- Feedback Chat Modal -->
+    <div class="modal" id="feedbackChatModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="feedbackChatTitle">Feedback with Faculty</h2>
+                <button class="close-btn" onclick="backToSubjects('feedbackModal')">← Back</button>
+            </div>
+            <div id="feedbackChatContent" style="height: 300px; overflow-y: auto; margin-bottom: 1rem; background: #f9f9f9; padding: 1rem; border-radius: 4px;"></div>
+            <form id="feedbackSendForm">
+                <textarea id="feedbackMessage" placeholder="Type your message..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                <button type="submit" style="margin-top: 0.5rem; background: #3498db; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Send</button>
+            </form>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="static/app.js"></script>
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        
+        document.getElementById('menu-toggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        });
+        
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+        
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        function backToSubjects(modalId) {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            openModal(modalId);
+        }
+        
+        async function loadStudentInfo() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/student/info`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                document.getElementById('user-name').textContent = data.name;
+                document.getElementById('batch-info').textContent = `Batch ${data.batch_id}`;
+                document.getElementById('semester').textContent = data.semester;
+                document.getElementById('cgpa').textContent = data.cgpa.toFixed(2);
+            } catch (e) { console.error(e); }
+        }
+        
+        async function loadSubjects(containerId) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/student/subjects`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const subjects = await res.json();
+                let html = '';
+                subjects.forEach(s => {
+                    html += `<div class="box" onclick="openSubjectDetail(${s.sid}, '${s.name}', ${containerId.includes('Marks') ? 'marks' : containerId.includes('Attendance') ? 'attendance' : 'feedback'})"><h4>${s.name}</h4><p>by ${s.fname}</p></div>`;
+                });
+                document.getElementById(containerId).innerHTML = html;
+            } catch (e) { console.error(e); }
+        }
+        
+        async function openMarksWindow() {
+            openModal('marksModal');
+            await loadSubjects('subjectsForMarks');
+        }
+        
+        async function openAttendanceWindow() {
+            openModal('attendanceModal');
+            await loadSubjects('subjectsForAttendance');
+        }
+        
+        async function openAlertsWindow() {
+            openModal('alertsModal');
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/student/alerts`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const alerts = await res.json();
+                let html = '<div style="max-height: 300px; overflow-y: auto;">';
+                alerts.forEach(a => {
+                    html += `<div style="padding: 0.5rem; margin: 0.5rem 0; background: ${a.read ? '#fff3cd' : '#f8d7da'}; border-radius: 4px; border: 1px solid #ddd;">${a.msg}</div>`;
+                });
+                html += '</div>';
+                document.getElementById('alertsList').innerHTML = html;
+            } catch (e) { console.error(e); }
+        }
+        
+        async function openFeedbackWindow() {
+            openModal('feedbackModal');
+            await loadSubjects('subjectsForFeedback');
+        }
+        
+        async function openSubjectDetail(sid, name, type) {
+            if (type === 'marks') {
+                document.getElementById('marksDetailTitle').textContent = `Marks - ${name}`;
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('marksDetailModal');
+                
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE}/api/student/marks/${sid}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                let html = `<div style="margin-bottom: 1.5rem;"><h3>Your Marks</h3>`;
+                html += `<table style="width: 100%; border-collapse: collapse;"><tr style="background: #ecf0f1;"><th style="padding: 8px; border: 1px solid #ddd;">Assessment</th><th style="padding: 8px; border: 1px solid #ddd;">Your Score</th><th style="padding: 8px; border: 1px solid #ddd;">Class Avg</th></tr>`;
+                html += `<tr><td style="padding: 8px; border: 1px solid #ddd;">MST</td><td>${data.student_marks.mst || '-'}</td><td>${data.class_avg.mst.toFixed(2)}</td></tr>`;
+                html += `<tr><td style="padding: 8px; border: 1px solid #ddd;">EST</td><td>${data.student_marks.est || '-'}</td><td>${data.class_avg.est.toFixed(2)}</td></tr>`;
+                html += `<tr><td style="padding: 8px; border: 1px solid #ddd;">Quiz</td><td>${data.student_marks.quiz || '-'}</td><td>${data.class_avg.quiz.toFixed(2)}</td></tr>`;
+                html += `<tr><td style="padding: 8px; border: 1px solid #ddd;">Assignment</td><td>${data.student_marks.assignment || '-'}</td><td>${data.class_avg.assignment.toFixed(2)}</td></tr>`;
+                html += `<tr style="background: #d4edda;"><td style="padding: 8px; border: 1px solid #ddd;">Total</td><td><strong>${data.student_marks.total || '-'}</strong></td><td><strong>${data.class_avg.total.toFixed(2)}</strong></td></tr></table>`;
+                html += `</div><canvas id="marksChart"></canvas>`;
+                document.getElementById('marksDetailContent').innerHTML = html;
+                
+                setTimeout(() => {
+                    const ctx = document.getElementById('marksChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['MST', 'EST', 'Quiz', 'Assignment'],
+                                datasets: [{
+                                    label: 'Your Score',
+                                    data: [data.student_marks.mst, data.student_marks.est, data.student_marks.quiz, data.student_marks.assignment],
+                                    backgroundColor: '#3498db'
+                                }, {
+                                    label: 'Class Average',
+                                    data: [data.class_avg.mst, data.class_avg.est, data.class_avg.quiz, data.class_avg.assignment],
+                                    backgroundColor: '#e74c3c'
+                                }]
+                            }
+                        });
+                    }
+                }, 100);
+            } else if (type === 'attendance') {
+                document.getElementById('attendanceDetailTitle').textContent = `Attendance - ${name}`;
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('attendanceDetailModal');
+                
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE}/api/student/attendance/${sid}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                let html = `<div style="margin-bottom: 1rem;"><h3 style="color: #27ae60; font-size: 24px;">Attendance: ${data.percentage.toFixed(2)}%</h3>`;
+                html += `<p>Present: ${data.present} / Total: ${data.total}</p></div>`;
+                html += `<div style="max-height: 250px; overflow-y: auto;"><table style="width: 100%; border-collapse: collapse;">`;
+                data.records.forEach(r => {
+                    html += `<tr style="background: ${r.status === 'present' ? '#d4edda' : '#f8d7da'};"><td style="padding: 8px; border: 1px solid #ddd;">${r.date}</td><td style="padding: 8px; border: 1px solid #ddd;">${r.status.toUpperCase()}</td></tr>`;
+                });
+                html += `</table></div>`;
+                document.getElementById('attendanceDetailContent').innerHTML = html;
+            } else if (type === 'feedback') {
+                document.getElementById('feedbackChatTitle').textContent = `Feedback - ${name}`;
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('feedbackChatModal');
+                
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE}/api/student/feedback/${sid}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                let html = '';
+                data.messages.forEach(m => {
+                    html += `<div style="margin: 0.5rem 0; padding: 0.5rem; background: ${m.type === 'student' ? '#d1ecf1' : '#fff3cd'}; border-radius: 4px;">${m.type === 'student' ? 'You' : data.faculty_name}: ${m.text}</div>`;
+                });
+                document.getElementById('feedbackChatContent').innerHTML = html;
+                document.getElementById('currentSubjectId').value = sid;
+                document.getElementById('currentFacultyId').value = data.faculty_id;
+            }
+        }
+        
+        document.getElementById('logout').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        });
+        
+        window.addEventListener('load', loadStudentInfo);
+    </script>
 </body>
 </html>

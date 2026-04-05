@@ -1,15 +1,16 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import oracledb
 import bcrypt
 import jwt
 import datetime
 from functools import wraps
+from datetime import timedelta
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)
 
-SECRET_KEY = 'your-secret-key'
+SECRET_KEY = 'sfs-secret-key-2026'
 DB_CONFIG = {
     'user': 'system',
     'password': 'Vanshi@Oracle1',

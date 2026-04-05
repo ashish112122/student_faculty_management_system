@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #F5F5F5; }
+        
+        /* Sidebar */
+        .sidebar { position: fixed; left: -250px; top: 0; width: 250px; height: 100%; background: #2C2C2C; color: white; transition: 0.3s; z-index: 1000; }
+        .sidebar.active { left: 0; }
+        .sidebar h2 { padding: 20px; background: #1a1a1a; }
+        .sidebar nav a { display: block; padding: 15px 20px; color: white; text-decoration: none; border-bottom: 1px solid #3a3a3a; }
+        .sidebar nav a:hover { background: #3A7BD5; }
+        
+        /* Menu Button */
+        .menu-btn { position: fixed; top: 20px; left: 20px; width: 40px; height: 30px; cursor: pointer; z-index: 1001; }
+        .menu-btn div { width: 100%; height: 4px; background: #2C2C2C; margin: 6px 0; transition: 0.3s; }
+        .menu-btn.active div:nth-child(1) { transform: rotate(-45deg) translate(-6px, 6px); }
+        .menu-btn.active div:nth-child(2) { opacity: 0; }
+        .menu-btn.active div:nth-child(3) { transform: rotate(45deg) translate(-6px, -6px); }
+        
+        /* Main Content */
+        .container { margin-left: 80px; padding: 20px; }
+        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #EAEAEA; }
+        .header h1 { color: #2C2C2C; margin-bottom: 10px; }
+        .header p { color: #4A5568; }
+        
+        /* Dashboard Boxes */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .dashboard-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #EAEAEA; text-align: center; cursor: pointer; transition: 0.3s; }
+        .dashboard-box:hover { transform: translateY(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); background: #F5F5F5; }
+        .dashboard-box h3 { color: #2C2C2C; margin-bottom: 10px; font-size: 24px; }
+        
+        /* Batch Boxes */
+        .batch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .batch-box { background: white; border: 2px solid #3A7BD5; color: #2C2C2C; padding: 30px; border-radius: 10px; cursor: pointer; transition: 0.3s; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .batch-box:hover { transform: translateY(-5px); box-shadow: 0 4px 12px rgba(58,123,213,0.2); background: #f0f7ff; }
+        
+        /* Table */
+        table { width: 100%; background: white; border-radius: 10px; overflow: hidden; margin-top: 20px; border: 1px solid #EAEAEA; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #EAEAEA; }
+        table th { background: #F5F5F5; font-weight: 600; color: #2C2C2C; }
+        table tr:hover { background: #F5F5F5; }
+        input[type="number"] { width: 70px; padding: 5px; border: 1px solid #EAEAEA; border-radius: 4px; }
+        
+        /* Feedback */
+        .feedback-list { margin-top: 20px; }
+        .feedback-thread { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; border: 1px solid #EAEAEA; }
+        .feedback-thread:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.1); background: #F5F5F5; }
+        .feedback-thread.unread { border-left: 4px solid #dc3545; }
+        .feedback-thread h4 { color: #2C2C2C; margin-bottom: 5px; }
+        .feedback-thread p { color: #4A5568; font-size: 14px; }
+        .unread-badge { background: #dc3545; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 10px; }
+        
+        /* Chat */
+        .chat-container { background: white; border-radius: 10px; padding: 20px; height: 500px; display: flex; flex-direction: column; border: 1px solid #EAEAEA; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 10px; background: #F5F5F5; border-radius: 8px; margin-bottom: 15px; }
+        .chat-message { margin-bottom: 15px; padding: 10px; border-radius: 8px; max-width: 70%; }
+        .chat-message.faculty { background: #3A7BD5; color: white; margin-left: auto; }
+        .chat-message.student { background: #EAEAEA; color: #2C2C2C; }
+        .chat-message .sender { font-weight: bold; margin-bottom: 5px; font-size: 12px; }
+        .chat-message .text { margin-bottom: 5px; }
+        .chat-message .time { font-size: 11px; opacity: 0.7; }
+        .chat-message.unread { border: 2px solid #dc3545; }
+        .chat-input { display: flex; gap: 10px; }
+        .chat-input input { flex: 1; padding: 10px; border: 1px solid #EAEAEA; border-radius: 5px; }
+        .chat-input button { padding: 10px 20px; background: #3A7BD5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .chat-input button:hover { background: #2d5fa8; }
+        
+        /* Buttons */
+        .btn { padding: 10px 20px; background: #3A7BD5; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #2d5fa8; }
+        .btn-back { background: #4A5568; }
+        .btn-back:hover { background: #3a4555; }
+        .btn-success { background: #2AA198; }
+        .btn-success:hover { background: #238b83; }
+        
+        /* Hidden */
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Menu Button -->
+    <div class="menu-btn" onclick="toggleMenu()">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <h2>👨‍🏫 Faculty Portal</h2>
+        <nav>
+            <a href="#" onclick="showDashboard()">Dashboard</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </nav>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Dashboard View -->
+        <div id="dashboard-view">
+            <div class="header">
+                <h1>Welcome, <span id="faculty-name">Loading...</span></h1>
+                <p>Department: <span id="department">-</span></p>
+                <p>Subject: <span id="subject-name">-</span></p>
+                <p>Batches: <span id="batches-list">-</span></p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-box" onclick="showMarks()">
+                    <h3>📝</h3>
+                    <p>Marks</p>
+                </div>
+                <div class="dashboard-box" onclick="showAttendance()">
+                    <h3>📅</h3>
+                    <p>Attendance</p>
+                </div>
+                <div class="dashboard-box" onclick="showFeedback()">
+                    <h3>💬</h3>
+                    <p>Feedback</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Marks View -->
+        <div id="marks-view" class="hidden">
+            <div class="header">
+                <h1>Marks - Select Batch</h1>
+                <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
+            </div>
+            <div class="batch-grid" id="marks-batches"></div>
+        </div>
+        
+        <!-- Marks Entry -->
+        <div id="marks-entry-view" class="hidden">
+            <div class="header">
+                <h1 id="marks-entry-title">Marks Entry</h1>
+                <button class="btn btn-back" onclick="showMarks()">← Back to Batches</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Mid (30)</th>
+                        <th>Final (40)</th>
+                        <th>Quiz (15)</th>
+                        <th>Assignment (15)</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="marks-entry-tbody"></tbody>
+            </table>
+        </div>
+        
+        <!-- Attendance View -->
+        <div id="attendance-view" class="hidden">
+            <div class="header">
+                <h1>Attendance - Select Batch</h1>
+                <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
+            </div>
+            <div class="batch-grid" id="attendance-batches"></div>
+        </div>
+        
+        <!-- Attendance Entry -->
+        <div id="attendance-entry-view" class="hidden">
+            <div class="header">
+                <h1 id="attendance-entry-title">Mark Attendance</h1>
+                <div style="margin: 15px 0;">
+                    <label for="attendance-date" style="margin-right: 10px; font-weight: bold;">Select Date:</label>
+                    <input type="date" id="attendance-date" min="2026-01-01" max="2026-05-01" style="padding: 8px; border: 1px solid #EAEAEA; border-radius: 5px;">
+                    <button class="btn" onclick="loadAttendanceForDate()" style="margin-left: 10px;">Load Attendance</button>
+                </div>
+                <button class="btn btn-back" onclick="showAttendance()">← Back to Batches</button>
+            </div>
+            <div id="attendance-instructions" style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3A7BD5;">
+                <strong>Instructions:</strong> Select a date above, then mark Present (P) or Absent (A) for each student. Click "Save Attendance" when done.
+            </div>
+            <table id="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="attendance-entry-tbody"></tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn btn-success" onclick="saveAllAttendance()" style="font-size: 16px; padding: 12px 30px;">Save Attendance for Selected Date</button>
+            </div>
+        </div>
+        
+        <!-- Feedback View -->
+        <div id="feedback-view" class="hidden">
+            <div class="header">
+                <h1>Feedback Threads</h1>
+                <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
+            </div>
+            <div class="feedback-list" id="feedback-threads"></div>
+        </div>
+        
+        <!-- Feedback Chat -->
+        <div id="feedback-chat-view" class="hidden">
+            <div class="header">
+                <h1 id="chat-title">Chat</h1>
+                <button class="btn btn-back" onclick="showFeedback()">← Back to Threads</button>
+            </div>
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="Type your reply..." onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login_test.html';
+        }
+        
+        let facultyData = null;
+        let currentSubject = null;
+        let currentBatch = null;
+        let currentStudent = null;
+        
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.querySelector('.menu-btn');
+            sidebar.classList.toggle('active');
+            menuBtn.classList.toggle('active');
+        }
+        
+        function hideAllViews() {
+            document.querySelectorAll('[id$="-view"]').forEach(el => el.classList.add('hidden'));
+        }
+        
+        function showDashboard() {
+            hideAllViews();
+            document.getElementById('dashboard-view').classList.remove('hidden');
+        }
+        
+        function showMarks() {
+            hideAllViews();
+            document.getElementById('marks-view').classList.remove('hidden');
+            loadMarksBatches();
+        }
+        
+        function showAttendance() {
+            hideAllViews();
+            document.getElementById('attendance-view').classList.remove('hidden');
+            loadAttendanceBatches();
+        }
+        
+        function showFeedback() {
+            hideAllViews();
+            document.getElementById('feedback-view').classList.remove('hidden');
+            loadFeedbackThreads();
+        }
+        
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_URL}/faculty/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                facultyData = await response.json();
+                
+                document.getElementById('faculty-name').textContent = facultyData.name;
+                document.getElementById('department').textContent = facultyData.department;
+                
+                // Add faculty code
+                const nameElement = document.getElementById('faculty-name');
+                nameElement.textContent = `${facultyData.name} (${facultyData.faculty_code})`;
+                
+                if (facultyData.subjects.length > 0) {
+                    const subject = facultyData.subjects[0];
+                    document.getElementById('subject-name').textContent = subject.subject_name;
+                    
+                    const batches = [...new Set(facultyData.subjects.map(s => s.class_name))];
+                    document.getElementById('batches-list').textContent = batches.join(', ');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('Error loading dashboard. Please login again.');
+            }
+        }
+        
+        function loadMarksBatches() {
+            const batches = [...new Set(facultyData.subjects.map(s => s.class_name))];
+            const container = document.getElementById('marks-batches');
+            container.innerHTML = batches.map(batch => `
+                <div class="batch-box" onclick="showMarksEntry('${batch}')">
+                    <h3>${batch}</h3>
+                    <p>Click to enter marks</p>
+                </div>
+            `).join('');
+        }
+        
+        async function showMarksEntry(batch) {
+            currentBatch = batch;
+            const subject = facultyData.subjects[0];
+            currentSubject = subject;
+            
+            hideAllViews();
+            document.getElementById('marks-entry-view').classList.remove('hidden');
+            document.getElementById('marks-entry-title').textContent = `${subject.subject_name} - ${batch}`;
+            
+            try {
+                const response = await fetch(`${API_URL}/faculty/marks/${subject.subject_id}/${batch}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const students = await response.json();
+                
+                const tbody = document.getElementById('marks-entry-tbody');
+                tbody.innerHTML = students.map(s => `
+                    <tr id="row-${s.student_id}">
+                        <td>Roll ${s.roll_number}: ${s.name}</td>
+                        <td><input type="number" id="mid-${s.student_id}" value="${s.mid || ''}" min="0" max="30" onchange="updateTotal(${s.student_id})"></td>
+                        <td><input type="number" id="final-${s.student_id}" value="${s.final || ''}" min="0" max="40" onchange="updateTotal(${s.student_id})"></td>
+                        <td><input type="number" id="quiz-${s.student_id}" value="${s.quiz || ''}" min="0" max="15" onchange="updateTotal(${s.student_id})"></td>
+                        <td><input type="number" id="assignment-${s.student_id}" value="${s.assignment || ''}" min="0" max="15" onchange="updateTotal(${s.student_id})"></td>
+                        <td><strong id="total-${s.student_id}">${s.total}</strong></td>
+                        <td><button class="btn btn-success" onclick="saveMarks(${s.student_id})">Save</button></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading students:', error);
+            }
+        }
+        
+        function updateTotal(studentId) {
+            const mid = parseFloat(document.getElementById(`mid-${studentId}`).value) || 0;
+            const final = parseFloat(document.getElementById(`final-${studentId}`).value) || 0;
+            const quiz = parseFloat(document.getElementById(`quiz-${studentId}`).value) || 0;
+            const assignment = parseFloat(document.getElementById(`assignment-${studentId}`).value) || 0;
+            const total = mid + final + quiz + assignment;
+            document.getElementById(`total-${studentId}`).textContent = total;
+        }
+        
+        async function saveMarks(studentId) {
+            const mid = document.getElementById(`mid-${studentId}`).value;
+            const final = document.getElementById(`final-${studentId}`).value;
+            const quiz = document.getElementById(`quiz-${studentId}`).value;
+            const assignment = document.getElementById(`assignment-${studentId}`).value;
+            
+            try {
+                const response = await fetch(`${API_URL}/faculty/add_marks`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        subject_id: currentSubject.subject_id,
+                        class_name: currentBatch,
+                        marks: {
+                            mid: mid !== '' ? parseFloat(mid) : null,
+                            final: final !== '' ? parseFloat(final) : null,
+                            quiz: quiz !== '' ? parseFloat(quiz) : null,
+                            assignment: assignment !== '' ? parseFloat(assignment) : null
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Marks saved successfully!');
+                    document.getElementById(`row-${studentId}`).style.background = '#d4edda';
+                    setTimeout(() => {
+                        document.getElementById(`row-${studentId}`).style.background = '';
+                    }, 2000);
+                } else {
+                    alert('Error saving marks');
+                }
+            } catch (error) {
+                console.error('Error saving marks:', error);
+                alert('Error saving marks');
+            }
+        }
+        
+        function loadAttendanceBatches() {
+            const batches = [...new Set(facultyData.subjects.map(s => s.class_name))];
+            const container = document.getElementById('attendance-batches');
+            container.innerHTML = batches.map(batch => `
+                <div class="batch-box" onclick="showAttendanceEntry('${batch}')">
+                    <h3>${batch}</h3>
+                    <p>Click to mark attendance</p>
+                </div>
+            `).join('');
+        }
+        
+        async function showAttendanceEntry(batch) {
+            currentBatch = batch;
+            const subject = facultyData.subjects[0];
+            currentSubject = subject;
+            
+            hideAllViews();
+            document.getElementById('attendance-entry-view').classList.remove('hidden');
+            document.getElementById('attendance-entry-title').textContent = `${subject.subject_name} - ${batch}`;
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('attendance-date').value = today;
+            
+            // Load attendance for today
+            await loadAttendanceForDate();
+        }
+        
+        async function loadAttendanceForDate() {
+            const date = document.getElementById('attendance-date').value;
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/faculty/attendance/${currentSubject.subject_id}/${currentBatch}?date=${date}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                const tbody = document.getElementById('attendance-entry-tbody');
+                tbody.innerHTML = data.students.map(s => `
+                    <tr id="att-row-${s.student_id}">
+                        <td>Roll ${s.roll_number}: ${s.name}</td>
+                        <td>
+                            <span id="status-${s.student_id}" style="font-weight: bold; color: ${s.status === 'P' ? '#2AA198' : s.status === 'A' ? '#dc3545' : '#4A5568'};">
+                                ${s.status === 'P' ? 'Present' : s.status === 'A' ? 'Absent' : 'Not Marked'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-success" onclick="markStatus(${s.student_id}, 'P')" style="padding: 5px 15px; margin-right: 5px;">P</button>
+                            <button class="btn" onclick="markStatus(${s.student_id}, 'A')" style="background: #dc3545; padding: 5px 15px;">A</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                alert('Error loading attendance');
+            }
+        }
+        
+        function markStatus(studentId, status) {
+            const statusSpan = document.getElementById(`status-${studentId}`);
+            const statusText = status === 'P' ? 'Present' : 'Absent';
+            const statusColor = status === 'P' ? '#2AA198' : '#dc3545';
+            
+            statusSpan.textContent = statusText;
+            statusSpan.style.color = statusColor;
+            
+            // Store in data attribute for batch save
+            document.getElementById(`att-row-${studentId}`).setAttribute('data-status', status);
+        }
+        
+        async function saveAllAttendance() {
+            const date = document.getElementById('attendance-date').value;
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+            
+            // Collect all attendance records
+            const attendance = [];
+            const rows = document.querySelectorAll('#attendance-entry-tbody tr');
+            
+            rows.forEach(row => {
+                const studentId = row.id.replace('att-row-', '');
+                const status = row.getAttribute('data-status');
+                
+                if (status) {
+                    attendance.push({
+                        student_id: parseInt(studentId),
+                        status: status
+                    });
+                }
+            });
+            
+            if (attendance.length === 0) {
+                alert('Please mark attendance for at least one student');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/faculty/attendance/mark_batch`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subject_id: currentSubject.subject_id,
+                        class_name: currentBatch,
+                        date: date,
+                        attendance: attendance
+                    })
+                });
+                
+                if (response.ok) {
+                    alert(`Attendance saved successfully for ${date}!`);
+                    // Reload to show updated status
+                    await loadAttendanceForDate();
+                } else {
+                    const data = await response.json();
+                    alert(data.message || 'Error saving attendance');
+                }
+            } catch (error) {
+                console.error('Error saving attendance:', error);
+                alert('Error saving attendance');
+            }
+        }
+        
+        async function loadFeedbackThreads() {
+            try {
+                const response = await fetch(`${API_URL}/faculty/feedback/threads`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const threads = await response.json();
+                
+                const container = document.getElementById('feedback-threads');
+                if (threads.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:20px;">No feedback threads</p>';
+                } else {
+                    container.innerHTML = threads.map(t => `
+                        <div class="feedback-thread ${t.unread_count > 0 ? 'unread' : ''}" onclick="openChat(${t.student_id}, ${t.subject_id}, '${t.student_name}', '${t.subject_name}')">
+                            <h4>${t.student_name} (${t.class_name})
+                                ${t.unread_count > 0 ? `<span class="unread-badge">${t.unread_count} new</span>` : ''}
+                            </h4>
+                            <p>${t.subject_name}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading threads:', error);
+            }
+        }
+        
+        async function openChat(studentId, subjectId, studentName, subjectName) {
+            currentStudent = {id: studentId, name: studentName};
+            currentSubject = {id: subjectId, name: subjectName};
+            
+            hideAllViews();
+            document.getElementById('feedback-chat-view').classList.remove('hidden');
+            document.getElementById('chat-title').textContent = `Chat with ${studentName} - ${subjectName}`;
+            
+            loadChatMessages();
+        }
+        
+        async function loadChatMessages() {
+            try {
+                const response = await fetch(`${API_URL}/faculty/feedback/${currentStudent.id}/${currentSubject.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const messages = await response.json();
+                
+                const container = document.getElementById('chat-messages');
+                container.innerHTML = messages.map(m => `
+                    <div class="chat-message ${m.sender_role} ${m.sender_role === 'student' && !m.is_read ? 'unread' : ''}">
+                        <div class="sender">${m.sender_role === 'faculty' ? 'You' : currentStudent.name}</div>
+                        <div class="text">${m.message}</div>
+                        <div class="time">${m.created_at}</div>
+                    </div>
+                `).join('');
+                
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                console.error('Error loading chat:', error);
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            try {
+                await fetch(`${API_URL}/faculty/feedback/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: currentStudent.id,
+                        subject_id: currentSubject.id,
+                        message: message
+                    })
+                });
+                
+                input.value = '';
+                loadChatMessages();
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login_test.html';
+        }
+        
+        loadDashboard();
+    </script>
+</body>
+</html>

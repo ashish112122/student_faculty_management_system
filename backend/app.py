@@ -106,7 +106,7 @@ def student_dashboard():
     
     try:
         cursor.execute("""
-            SELECT s.student_id, s.name, s.branch, s.year_of_study, s.semester, s.section, s.cgpa, s.class_name
+            SELECT s.student_id, s.name, s.branch, s.semester, s.class_name, s.cgpa, s.roll_number
             FROM students s
             WHERE s.user_id = :user_id
         """, {'user_id': request.user_id})
@@ -116,136 +116,20 @@ def student_dashboard():
         if not student:
             return jsonify({'message': 'Student not found'}), 404
         
-        student_id, name, branch, year, semester, section, cgpa, class_name = student
+        student_id, name, branch, semester, class_name, cgpa, roll_number = student
         
         cursor.execute("""
-            SELECT DISTINCT s.subject_id, s.subject_name, s.subject_code
+            SELECT DISTINCT s.subject_id, s.subject_name, s.subject_code, f.name as faculty_name, f.faculty_code
             FROM marks m
             JOIN subjects s ON m.subject_id = s.subject_id
+            JOIN faculty_classes fc ON fc.subject_id = s.subject_id AND fc.class_name = m.class_name
+            JOIN faculty f ON f.faculty_id = fc.faculty_id
             WHERE m.student_id = :student_id
             ORDER BY s.subject_name
         """, {'student_id': student_id})
         
-        subjects = [{'subject_id': row[0], 'subject_name': row[1], 'subject_code': row[2]} for row in cursor.fetchall()]
+        subjects = [{'subject_id': row[0], 'subject_name': row[1], 'subject_code': row[2], 'faculty_name': row[3], 'faculty_code': row[4]} for row in cursor.fetchall()]
         total_credits = len(subjects) * 4
-        
-        # Get marks with detailed breakdown
-        cursor.execute("""
-            SELECT s.subject_id, s.subject_name, s.subject_code, 
-                   f.name as faculty_name,
-                   MAX(CASE WHEN m.assessment_type = 'MST' THEN m.marks_obtained END) as mid,
-                   MAX(CASE WHEN m.assessment_type = 'MST' THEN m.max_marks END) as mid_max,
-                   MAX(CASE WHEN m.assessment_type = 'EST' THEN m.marks_obtained END) as final,
-                   MAX(CASE WHEN m.assessment_type = 'EST' THEN m.max_marks END) as final_max,
-                   MAX(CASE WHEN m.assessment_type = 'Quiz' THEN m.marks_obtained END) as quiz,
-                   MAX(CASE WHEN m.assessment_type = 'Quiz' THEN m.max_marks END) as quiz_max,
-                   MAX(CASE WHEN m.assessment_type = 'Assignment' THEN m.marks_obtained END) as assignment,
-                   MAX(CASE WHEN m.assessment_type = 'Assignment' THEN m.max_marks END) as assignment_max
-            FROM marks m
-            JOIN subjects s ON m.subject_id = s.subject_id
-            LEFT JOIN faculty_classes fc ON fc.subject_id = s.subject_id AND fc.class_name = m.class_name
-            LEFT JOIN faculty f ON f.faculty_id = fc.faculty_id
-            WHERE m.student_id = :student_id
-            GROUP BY s.subject_id, s.subject_name, s.subject_code, f.name
-            ORDER BY s.subject_name
-        """, {'student_id': student_id})
-        
-        marks = []
-        for row in cursor.fetchall():
-            mid = float(row[4]) if row[4] else 0
-            mid_max = float(row[5]) if row[5] else 50
-            final = float(row[6]) if row[6] else 0
-            final_max = float(row[7]) if row[7] else 100
-            quiz = float(row[8]) if row[8] else 0
-            quiz_max = float(row[9]) if row[9] else 10
-            assignment = float(row[10]) if row[10] else 0
-            assignment_max = float(row[11]) if row[11] else 20
-            
-            total = mid + final + quiz + assignment
-            total_max = mid_max + final_max + quiz_max + assignment_max
-            percentage = round((total / total_max) * 100, 2) if total_max > 0 else 0
-            grade = 'A+' if percentage >= 90 else 'A' if percentage >= 80 else 'B+' if percentage >= 70 else 'B' if percentage >= 60 else 'C' if percentage >= 50 else 'F'
-            
-            marks.append({
-                'subject_id': row[0],
-                'subject': row[1],
-                'subject_code': row[2],
-                'faculty': row[3] or 'N/A',
-                'mid': mid,
-                'final': final,
-                'quiz': quiz,
-                'assignment': assignment,
-                'total': total,
-                'grade': grade
-            })
-        
-        # Get class averages
-        cursor.execute("""
-            SELECT s.subject_id, s.subject_name,
-                   AVG(CASE WHEN m.assessment_type = 'MST' THEN m.marks_obtained END) as mid_avg,
-                   AVG(CASE WHEN m.assessment_type = 'EST' THEN m.marks_obtained END) as final_avg,
-                   AVG(CASE WHEN m.assessment_type = 'Quiz' THEN m.marks_obtained END) as quiz_avg,
-                   AVG(CASE WHEN m.assessment_type = 'Assignment' THEN m.marks_obtained END) as assignment_avg
-            FROM marks m
-            JOIN subjects s ON m.subject_id = s.subject_id
-            WHERE s.subject_id IN (
-                SELECT DISTINCT subject_id FROM marks WHERE student_id = :student_id
-            )
-            GROUP BY s.subject_id, s.subject_name
-            ORDER BY s.subject_name
-        """, {'student_id': student_id})
-        
-        class_average = []
-        for row in cursor.fetchall():
-            class_average.append({
-                'subject_id': row[0],
-                'subject': row[1],
-                'mid': round(float(row[2]), 2) if row[2] else 0,
-                'final': round(float(row[3]), 2) if row[3] else 0,
-                'quiz': round(float(row[4]), 2) if row[4] else 0,
-                'assignment': round(float(row[5]), 2) if row[5] else 0
-            })
-        
-        # Get attendance
-        cursor.execute("""
-            SELECT s.subject_name, s.subject_code,
-                   COUNT(*) as total,
-                   SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) as present
-            FROM attendance a
-            JOIN subjects s ON a.subject_id = s.subject_id
-            WHERE a.student_id = :student_id
-            GROUP BY s.subject_name, s.subject_code
-            ORDER BY s.subject_name
-        """, {'student_id': student_id})
-        
-        attendance = []
-        for row in cursor.fetchall():
-            total = row[2] if row[2] else 0
-            present = row[3] if row[3] else 0
-            percentage = round((present / total) * 100, 2) if total > 0 else 0
-            
-            attendance.append({
-                'subject': row[0],
-                'total_classes': total,
-                'present': present,
-                'percentage': percentage
-            })
-        
-        # Get alerts
-        cursor.execute("""
-            SELECT alert_type, message, created_at
-            FROM alerts
-            WHERE student_id = :student_id
-            ORDER BY created_at DESC
-        """, {'student_id': student_id})
-        
-        alerts = []
-        for row in cursor.fetchall():
-            alerts.append({
-                'type': row[0],
-                'message': row[1],
-                'is_read': False
-            })
         
         return jsonify({
             'student_id': student_id,
@@ -255,11 +139,268 @@ def student_dashboard():
             'total_credits': total_credits,
             'branch': branch,
             'class_name': class_name,
-            'marks': marks,
-            'class_average': class_average,
-            'attendance': attendance,
-            'alerts': alerts
+            'roll_number': roll_number,
+            'subjects': subjects
         })
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/marks/<int:subject_id>', methods=['GET'])
+@token_required
+def get_student_subject_marks(subject_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({})
+        
+        student_id = result[0]
+        
+        cursor.execute("""
+            SELECT assessment_type, marks_obtained, max_marks
+            FROM marks
+            WHERE student_id = :student_id AND subject_id = :subject_id
+            ORDER BY assessment_type
+        """, {'student_id': student_id, 'subject_id': subject_id})
+        
+        marks = {}
+        for row in cursor.fetchall():
+            marks[row[0]] = {'obtained': float(row[1]), 'max': float(row[2])}
+        
+        # Get class average
+        cursor.execute("""
+            SELECT assessment_type, AVG(marks_obtained) as avg_marks
+            FROM marks
+            WHERE subject_id = :subject_id
+            GROUP BY assessment_type
+        """, {'subject_id': subject_id})
+        
+        class_avg = {}
+        for row in cursor.fetchall():
+            class_avg[row[0]] = round(float(row[1]), 2)
+        
+        return jsonify({'marks': marks, 'class_average': class_avg})
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/attendance/<int:subject_id>', methods=['GET'])
+@token_required
+def get_student_subject_attendance(subject_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        student_id = result[0]
+        
+        cursor.execute("""
+            SELECT attendance_date, status
+            FROM attendance
+            WHERE student_id = :student_id AND subject_id = :subject_id
+            ORDER BY attendance_date ASC
+        """, {'student_id': student_id, 'subject_id': subject_id})
+        
+        records = []
+        present = 0
+        total = 0
+        
+        for row in cursor.fetchall():
+            records.append({
+                'date': row[0].strftime('%Y-%m-%d'),
+                'status': 'Present' if row[1] == 'P' else 'Absent'
+            })
+            total += 1
+            if row[1] == 'P':
+                present += 1
+        
+        percentage = round((present / total) * 100, 2) if total > 0 else 0
+        
+        return jsonify({
+            'records': records,
+            'present': present,
+            'total': total,
+            'percentage': percentage
+        })
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/alerts', methods=['GET'])
+@token_required
+def get_student_alerts():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        student_id = result[0]
+        
+        cursor.execute("""
+            SELECT alert_id, alert_type, message, is_read, created_at
+            FROM alerts
+            WHERE student_id = :student_id
+            ORDER BY created_at DESC
+        """, {'student_id': student_id})
+        
+        alerts = []
+        for row in cursor.fetchall():
+            alerts.append({
+                'alert_id': row[0],
+                'type': row[1],
+                'message': row[2],
+                'is_read': row[3],
+                'created_at': row[4].strftime('%Y-%m-%d %H:%M')
+            })
+        
+        return jsonify(alerts)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/alerts/mark_read/<int:alert_id>', methods=['POST'])
+@token_required
+def mark_alert_read(alert_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("UPDATE alerts SET is_read = 1 WHERE alert_id = :alert_id", {'alert_id': alert_id})
+        conn.commit()
+        return jsonify({'message': 'Alert marked as read'})
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/feedback/subjects', methods=['GET'])
+@token_required
+def get_student_feedback_subjects():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        student_id = result[0]
+        
+        cursor.execute("""
+            SELECT DISTINCT s.subject_id, s.subject_name, s.subject_code, f.faculty_id, f.name as faculty_name, f.faculty_code
+            FROM marks m
+            JOIN subjects s ON m.subject_id = s.subject_id
+            JOIN faculty_classes fc ON fc.subject_id = s.subject_id AND fc.class_name = m.class_name
+            JOIN faculty f ON f.faculty_id = fc.faculty_id
+            WHERE m.student_id = :student_id
+            ORDER BY s.subject_name
+        """, {'student_id': student_id})
+        
+        subjects = []
+        for row in cursor.fetchall():
+            subjects.append({
+                'subject_id': row[0],
+                'subject_name': row[1],
+                'subject_code': row[2],
+                'faculty_id': row[3],
+                'faculty_name': row[4],
+                'faculty_code': row[5]
+            })
+        
+        return jsonify(subjects)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/feedback/<int:faculty_id>/<int:subject_id>', methods=['GET'])
+@token_required
+def get_student_feedback_thread(faculty_id, subject_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        student_id = result[0]
+        
+        cursor.execute("""
+            SELECT feedback_id, sender_role, message, is_read, created_at
+            FROM feedback
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
+            ORDER BY created_at ASC
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
+        
+        messages = []
+        for row in cursor.fetchall():
+            messages.append({
+                'feedback_id': row[0],
+                'sender_role': row[1],
+                'message': row[2],
+                'is_read': row[3],
+                'created_at': row[4].strftime('%Y-%m-%d %H:%M')
+            })
+        
+        cursor.execute("""
+            UPDATE feedback SET is_read = 1
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id AND sender_role = 'faculty' AND is_read = 0
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
+        conn.commit()
+        
+        return jsonify(messages)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/student/feedback/send', methods=['POST'])
+@token_required
+def send_student_feedback():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        data = request.get_json()
+        faculty_id = data.get('faculty_id')
+        subject_id = data.get('subject_id')
+        message = data.get('message')
+        
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Student not found'}), 404
+        
+        student_id = result[0]
+        
+        cursor.execute("""
+            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read)
+            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'student', :message, 0)
+        """, {
+            'student_id': student_id,
+            'faculty_id': faculty_id,
+            'subject_id': subject_id,
+            'message': message
+        })
+        
+        conn.commit()
+        return jsonify({'message': 'Message sent successfully'})
+    except Exception as e:
+        conn.rollback()
+        print(f"Error sending feedback: {str(e)}")
+        return jsonify({'message': 'Error sending message'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -276,7 +417,7 @@ def faculty_dashboard():
     
     try:
         cursor.execute("""
-            SELECT f.faculty_id, f.name, f.department
+            SELECT f.faculty_id, f.name, f.department, f.faculty_code
             FROM faculty f
             WHERE f.user_id = :user_id
         """, {'user_id': request.user_id})
@@ -285,7 +426,7 @@ def faculty_dashboard():
         if not faculty:
             return jsonify({'message': 'Faculty not found'}), 404
         
-        faculty_id, name, department = faculty
+        faculty_id, name, department, faculty_code = faculty
         
         cursor.execute("""
             SELECT DISTINCT s.subject_id, s.subject_name, s.subject_code, fc.class_name
@@ -308,6 +449,7 @@ def faculty_dashboard():
             'faculty_id': faculty_id,
             'name': name,
             'department': department,
+            'faculty_code': faculty_code,
             'subjects': subjects
         })
     finally:
@@ -324,8 +466,24 @@ def get_faculty_marks(subject_id, class_name):
     cursor = conn.cursor()
     
     try:
+        # Verify faculty is assigned to this subject and class
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Faculty not found'}), 404
+        
+        faculty_id = result[0]
+        
         cursor.execute("""
-            SELECT s.student_id, s.name,
+            SELECT COUNT(*) FROM faculty_classes 
+            WHERE faculty_id = :faculty_id AND subject_id = :subject_id AND class_name = :class_name
+        """, {'faculty_id': faculty_id, 'subject_id': subject_id, 'class_name': class_name})
+        
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'message': 'You are not assigned to this subject and class'}), 403
+        
+        cursor.execute("""
+            SELECT s.student_id, s.name, s.roll_number,
                    MAX(CASE WHEN m.assessment_type = 'MST' THEN m.marks_obtained END) as mid,
                    MAX(CASE WHEN m.assessment_type = 'EST' THEN m.marks_obtained END) as final,
                    MAX(CASE WHEN m.assessment_type = 'Quiz' THEN m.marks_obtained END) as quiz,
@@ -333,21 +491,22 @@ def get_faculty_marks(subject_id, class_name):
             FROM students s
             LEFT JOIN marks m ON s.student_id = m.student_id AND m.subject_id = :subject_id
             WHERE s.class_name = :class_name
-            GROUP BY s.student_id, s.name
-            ORDER BY s.name
+            GROUP BY s.student_id, s.name, s.roll_number
+            ORDER BY s.roll_number
         """, {'subject_id': subject_id, 'class_name': class_name})
         
         students = []
         for row in cursor.fetchall():
-            mid = float(row[2]) if row[2] else 0
-            final = float(row[3]) if row[3] else 0
-            quiz = float(row[4]) if row[4] else 0
-            assignment = float(row[5]) if row[5] else 0
+            mid = float(row[3]) if row[3] else 0
+            final = float(row[4]) if row[4] else 0
+            quiz = float(row[5]) if row[5] else 0
+            assignment = float(row[6]) if row[6] else 0
             total = mid + final + quiz + assignment
             
             students.append({
                 'student_id': row[0],
                 'name': row[1],
+                'roll_number': row[2],
                 'mid': mid,
                 'final': final,
                 'quiz': quiz,
@@ -376,20 +535,53 @@ def add_marks():
         class_name = data.get('class_name')
         marks_data = data.get('marks')
         
+        # Verify faculty is assigned to this subject and class
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Faculty not found'}), 404
+        
+        faculty_id = result[0]
+        
+        cursor.execute("""
+            SELECT COUNT(*) FROM faculty_classes 
+            WHERE faculty_id = :faculty_id AND subject_id = :subject_id AND class_name = :class_name
+        """, {'faculty_id': faculty_id, 'subject_id': subject_id, 'class_name': class_name})
+        
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'message': 'You are not assigned to this subject and class'}), 403
+        
+        # Verify student is in this class
+        cursor.execute("""
+            SELECT COUNT(*) FROM students WHERE student_id = :student_id AND class_name = :class_name
+        """, {'student_id': student_id, 'class_name': class_name})
+        
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'message': 'Student not found in this class'}), 404
+        
         cursor.execute("""
             DELETE FROM marks 
             WHERE student_id = :student_id AND subject_id = :subject_id
         """, {'student_id': student_id, 'subject_id': subject_id})
         
         assessment_map = {
-            'mid': ('MST', 50),
-            'final': ('EST', 100),
-            'quiz': ('Quiz', 10),
-            'assignment': ('Assignment', 20)
+            'mid': ('MST', 30),
+            'final': ('EST', 40),
+            'quiz': ('Quiz', 15),
+            'assignment': ('Assignment', 15)
         }
         
         for key, (assessment_type, max_marks) in assessment_map.items():
             if key in marks_data and marks_data[key] is not None and marks_data[key] != '':
+                marks_value = float(marks_data[key])
+                
+                # Validate marks don't exceed max
+                if marks_value > max_marks:
+                    return jsonify({'message': f'{assessment_type} marks cannot exceed {max_marks}'}), 400
+                
+                if marks_value < 0:
+                    return jsonify({'message': f'{assessment_type} marks cannot be negative'}), 400
+                
                 cursor.execute("""
                     INSERT INTO marks (mark_id, student_id, subject_id, class_name, assessment_type, marks_obtained, max_marks)
                     VALUES (marks_seq.NEXTVAL, :student_id, :subject_id, :class_name, :assessment_type, :marks_obtained, :max_marks)
@@ -398,7 +590,7 @@ def add_marks():
                     'subject_id': subject_id,
                     'class_name': class_name,
                     'assessment_type': assessment_type,
-                    'marks_obtained': float(marks_data[key]),
+                    'marks_obtained': marks_value,
                     'max_marks': max_marks
                 })
         
@@ -412,9 +604,131 @@ def add_marks():
         cursor.close()
         conn.close()
 
-@app.route('/api/faculty/marks_report/<int:subject_id>/<class_name>', methods=['GET'])
+@app.route('/api/faculty/feedback/threads', methods=['GET'])
 @token_required
-def get_marks_report(subject_id, class_name):
+def get_faculty_feedback_threads():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        faculty_id = result[0]
+        
+        cursor.execute("""
+            SELECT DISTINCT s.student_id, s.name, s.class_name, sub.subject_id, sub.subject_name,
+                   (SELECT COUNT(*) FROM feedback WHERE student_id = s.student_id AND faculty_id = :faculty_id 
+                    AND subject_id = sub.subject_id AND sender_role = 'student' AND is_read = 0) as unread_count
+            FROM feedback f
+            JOIN students s ON f.student_id = s.student_id
+            JOIN subjects sub ON f.subject_id = sub.subject_id
+            WHERE f.faculty_id = :faculty_id
+            ORDER BY s.name
+        """, {'faculty_id': faculty_id})
+        
+        threads = []
+        for row in cursor.fetchall():
+            threads.append({
+                'student_id': row[0],
+                'student_name': row[1],
+                'class_name': row[2],
+                'subject_id': row[3],
+                'subject_name': row[4],
+                'unread_count': row[5]
+            })
+        
+        return jsonify(threads)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/faculty/feedback/<int:student_id>/<int:subject_id>', methods=['GET'])
+@token_required
+def get_faculty_feedback_thread(student_id, subject_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        faculty_id = result[0]
+        
+        cursor.execute("""
+            SELECT feedback_id, sender_role, message, is_read, created_at
+            FROM feedback
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
+            ORDER BY created_at ASC
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
+        
+        messages = []
+        for row in cursor.fetchall():
+            messages.append({
+                'feedback_id': row[0],
+                'sender_role': row[1],
+                'message': row[2],
+                'is_read': row[3],
+                'created_at': row[4].strftime('%Y-%m-%d %H:%M')
+            })
+        
+        cursor.execute("""
+            UPDATE feedback SET is_read = 1
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id AND sender_role = 'student' AND is_read = 0
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
+        conn.commit()
+        
+        return jsonify(messages)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/faculty/feedback/send', methods=['POST'])
+@token_required
+def send_faculty_feedback():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        data = request.get_json()
+        student_id = data.get('student_id')
+        subject_id = data.get('subject_id')
+        message = data.get('message')
+        
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Faculty not found'}), 404
+        
+        faculty_id = result[0]
+        
+        cursor.execute("""
+            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read)
+            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'faculty', :message, 0)
+        """, {
+            'student_id': student_id,
+            'faculty_id': faculty_id,
+            'subject_id': subject_id,
+            'message': message
+        })
+        
+        conn.commit()
+        return jsonify({'message': 'Message sent successfully'})
+    except Exception as e:
+        conn.rollback()
+        print(f"Error sending feedback: {str(e)}")
+        return jsonify({'message': 'Error sending message'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/faculty/attendance/<int:subject_id>/<class_name>', methods=['GET'])
+@token_required
+def get_faculty_attendance(subject_id, class_name):
     if request.role != 'faculty':
         return jsonify({'message': 'Unauthorized'}), 403
     
@@ -422,67 +736,209 @@ def get_marks_report(subject_id, class_name):
     cursor = conn.cursor()
     
     try:
-        cursor.execute("""
-            SELECT 
-                AVG(CASE WHEN assessment_type = 'MST' THEN marks_obtained END) as mid_avg,
-                AVG(CASE WHEN assessment_type = 'EST' THEN marks_obtained END) as final_avg,
-                AVG(CASE WHEN assessment_type = 'Quiz' THEN marks_obtained END) as quiz_avg,
-                AVG(CASE WHEN assessment_type = 'Assignment' THEN marks_obtained END) as assignment_avg
-            FROM marks
-            WHERE subject_id = :subject_id AND class_name = :class_name
-        """, {'subject_id': subject_id, 'class_name': class_name})
+        # Verify faculty is assigned to this subject and class
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Faculty not found'}), 404
         
-        avg_row = cursor.fetchone()
+        faculty_id = result[0]
         
         cursor.execute("""
-            SELECT 
-                CASE 
-                    WHEN percentage >= 90 THEN 'A+'
-                    WHEN percentage >= 80 THEN 'A'
-                    WHEN percentage >= 70 THEN 'B+'
-                    WHEN percentage >= 60 THEN 'B'
-                    WHEN percentage >= 50 THEN 'C'
-                    ELSE 'F'
-                END as grade,
-                COUNT(*) as count
-            FROM (
-                SELECT student_id,
-                    (SUM(marks_obtained) / SUM(max_marks)) * 100 as percentage
-                FROM marks
-                WHERE subject_id = :subject_id AND class_name = :class_name
-                GROUP BY student_id
-            )
-            GROUP BY 
-                CASE 
-                    WHEN percentage >= 90 THEN 'A+'
-                    WHEN percentage >= 80 THEN 'A'
-                    WHEN percentage >= 70 THEN 'B+'
-                    WHEN percentage >= 60 THEN 'B'
-                    WHEN percentage >= 50 THEN 'C'
-                    ELSE 'F'
-                END
-            ORDER BY grade
-        """, {'subject_id': subject_id, 'class_name': class_name})
+            SELECT COUNT(*) FROM faculty_classes 
+            WHERE faculty_id = :faculty_id AND subject_id = :subject_id AND class_name = :class_name
+        """, {'faculty_id': faculty_id, 'subject_id': subject_id, 'class_name': class_name})
         
-        grade_distribution = []
-        for row in cursor.fetchall():
-            grade_distribution.append({
-                'grade': row[0],
-                'count': row[1]
-            })
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'message': 'You are not assigned to this subject and class'}), 403
         
-        return jsonify({
-            'class_average': {
-                'mid': round(float(avg_row[0]), 2) if avg_row[0] else 0,
-                'final': round(float(avg_row[1]), 2) if avg_row[1] else 0,
-                'quiz': round(float(avg_row[2]), 2) if avg_row[2] else 0,
-                'assignment': round(float(avg_row[3]), 2) if avg_row[3] else 0
-            },
-            'grade_distribution': grade_distribution
-        })
+        # Get date parameter (optional)
+        date_str = request.args.get('date')
+        
+        if date_str:
+            # Get attendance for specific date
+            cursor.execute("""
+                SELECT s.student_id, s.name, s.roll_number,
+                       CASE WHEN a.status IS NULL THEN 'N' ELSE a.status END as status
+                FROM students s
+                LEFT JOIN attendance a ON s.student_id = a.student_id 
+                    AND a.subject_id = :subject_id 
+                    AND a.attendance_date = TO_DATE(:date_param, 'YYYY-MM-DD')
+                WHERE s.class_name = :class_name
+                ORDER BY s.roll_number
+            """, {'subject_id': subject_id, 'class_name': class_name, 'date_param': date_str})
+            
+            students = []
+            for row in cursor.fetchall():
+                students.append({
+                    'student_id': row[0],
+                    'name': row[1],
+                    'roll_number': row[2],
+                    'status': row[3]
+                })
+            
+            return jsonify({'date': date_str, 'students': students})
+        else:
+            # Get students with overall attendance stats
+            cursor.execute("""
+                SELECT s.student_id, s.name, s.roll_number,
+                       COUNT(a.attendance_id) as total_classes,
+                       SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) as present
+                FROM students s
+                LEFT JOIN attendance a ON s.student_id = a.student_id AND a.subject_id = :subject_id
+                WHERE s.class_name = :class_name
+                GROUP BY s.student_id, s.name, s.roll_number
+                ORDER BY s.roll_number
+            """, {'subject_id': subject_id, 'class_name': class_name})
+            
+            students = []
+            for row in cursor.fetchall():
+                total = row[3] if row[3] else 0
+                present = row[4] if row[4] else 0
+                percentage = round((present / total) * 100, 2) if total > 0 else 0
+                
+                students.append({
+                    'student_id': row[0],
+                    'name': row[1],
+                    'roll_number': row[2],
+                    'total_classes': total,
+                    'present': present,
+                    'percentage': percentage
+                })
+            
+            return jsonify(students)
     finally:
         cursor.close()
         conn.close()
+
+@app.route('/api/faculty/attendance/mark_batch', methods=['POST'])
+@token_required
+def mark_batch_attendance():
+    if request.role != 'faculty':
+        return jsonify({'message': 'Unauthorized'}), 403
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        data = request.get_json()
+        subject_id = data.get('subject_id')
+        class_name = data.get('class_name')
+        date = data.get('date')
+        attendance_records = data.get('attendance')  # [{student_id, status}, ...]
+        
+        # Verify faculty is assigned to this subject and class
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Faculty not found'}), 404
+        
+        faculty_id = result[0]
+        
+        cursor.execute("""
+            SELECT COUNT(*) FROM faculty_classes 
+            WHERE faculty_id = :faculty_id AND subject_id = :subject_id AND class_name = :class_name
+        """, {'faculty_id': faculty_id, 'subject_id': subject_id, 'class_name': class_name})
+        
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'message': 'You are not assigned to this subject and class'}), 403
+        
+        # Mark attendance for all students
+        for record in attendance_records:
+            student_id = record.get('student_id')
+            status = record.get('status')
+            
+            # Verify student is in this class
+            cursor.execute("""
+                SELECT COUNT(*) FROM students WHERE student_id = :student_id AND class_name = :class_name
+            """, {'student_id': student_id, 'class_name': class_name})
+            
+            if cursor.fetchone()[0] == 0:
+                continue
+            
+            # Check if attendance already exists for this date
+            cursor.execute("""
+                SELECT attendance_id FROM attendance 
+                WHERE student_id = :student_id AND subject_id = :subject_id 
+                AND attendance_date = TO_DATE(:date_param, 'YYYY-MM-DD')
+            """, {'student_id': student_id, 'subject_id': subject_id, 'date_param': date})
+            
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update existing
+                cursor.execute("""
+                    UPDATE attendance SET status = :status
+                    WHERE attendance_id = :attendance_id
+                """, {'status': status, 'attendance_id': existing[0]})
+            else:
+                # Insert new
+                cursor.execute("""
+                    INSERT INTO attendance (attendance_id, student_id, subject_id, class_name, attendance_date, status)
+                    VALUES (attendance_seq.NEXTVAL, :student_id, :subject_id, :class_name, TO_DATE(:date_param, 'YYYY-MM-DD'), :status)
+                """, {
+                    'student_id': student_id,
+                    'subject_id': subject_id,
+                    'class_name': class_name,
+                    'date_param': date,
+                    'status': status
+                })
+        
+        conn.commit()
+        
+        # Update alerts based on new attendance
+        update_attendance_alerts(cursor, conn, subject_id, class_name)
+        
+        return jsonify({'message': 'Attendance marked successfully'})
+    except Exception as e:
+        conn.rollback()
+        print(f"Error marking attendance: {str(e)}")
+        return jsonify({'message': f'Error marking attendance: {str(e)}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+def update_attendance_alerts(cursor, conn, subject_id, class_name):
+    """Update alerts for students with low attendance"""
+    try:
+        # Get students with low attendance
+        cursor.execute("""
+            SELECT s.student_id, sub.subject_name,
+                   COUNT(*) as total,
+                   SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) as present
+            FROM students s
+            JOIN attendance a ON s.student_id = a.student_id
+            JOIN subjects sub ON a.subject_id = sub.subject_id
+            WHERE s.class_name = :class_name AND a.subject_id = :subject_id
+            GROUP BY s.student_id, sub.subject_name
+            HAVING (SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) / COUNT(*)) < 0.75
+        """, {'class_name': class_name, 'subject_id': subject_id})
+        
+        for student_id, subject_name, total, present in cursor.fetchall():
+            percentage = round((present / total) * 100, 2)
+            alert_type = 'Critical' if percentage < 50 else 'Warning'
+            message = f"Low attendance in {subject_name}: {percentage}%"
+            
+            # Check if alert already exists
+            cursor.execute("""
+                SELECT alert_id FROM alerts 
+                WHERE student_id = :student_id AND subject_id = :subject_id AND alert_type = :alert_type
+            """, {'student_id': student_id, 'subject_id': subject_id, 'alert_type': alert_type})
+            
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO alerts (alert_id, student_id, subject_id, alert_type, message, is_read)
+                    VALUES (alerts_seq.NEXTVAL, :student_id, :subject_id, :alert_type, :message, 0)
+                """, {
+                    'student_id': student_id,
+                    'subject_id': subject_id,
+                    'alert_type': alert_type,
+                    'message': message
+                })
+        
+        conn.commit()
+    except Exception as e:
+        print(f"Error updating alerts: {str(e)}")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

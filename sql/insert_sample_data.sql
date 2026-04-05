@@ -6,40 +6,55 @@ INSERT INTO departments (department_id, name) VALUES (departments_seq.NEXTVAL, '
 INSERT INTO departments (department_id, name) VALUES (departments_seq.NEXTVAL, 'Mechanical');
 INSERT INTO departments (department_id, name) VALUES (departments_seq.NEXTVAL, 'Civil');
 
--- Users and Students (150 students)
--- Passwords are hashed, but for simplicity, using plain text as per config (but should hash)
--- In real, use bcrypt
+-- Batches (30 students per batch = 5 batches for 150 students)
+INSERT INTO batches (batch_id, name) VALUES (batches_seq.NEXTVAL, '2Q31');
+INSERT INTO batches (batch_id, name) VALUES (batches_seq.NEXTVAL, '2Q32');
+INSERT INTO batches (batch_id, name) VALUES (batches_seq.NEXTVAL, '2Q33');
+INSERT INTO batches (batch_id, name) VALUES (batches_seq.NEXTVAL, '2Q34');
+INSERT INTO batches (batch_id, name) VALUES (batches_seq.NEXTVAL, '2Q35');
 
--- Faculty users
+-- Faculty Users
 INSERT INTO users (user_id, email, password, name, role) VALUES (users_seq.NEXTVAL, 'faculty1@univ.edu', 'pass123', 'Dr. John Doe', 'faculty');
 INSERT INTO users (user_id, email, password, name, role) VALUES (users_seq.NEXTVAL, 'faculty2@univ.edu', 'pass123', 'Dr. Jane Smith', 'faculty');
+INSERT INTO users (user_id, email, password, name, role) VALUES (users_seq.NEXTVAL, 'faculty3@univ.edu', 'pass123', 'Dr. Mike Johnson', 'faculty');
 
--- Faculty table
+-- Faculty table (3 faculty)
 INSERT INTO faculty (faculty_id, user_id, department_id) VALUES (faculty_seq.NEXTVAL, 1, 1);
-INSERT INTO faculty (faculty_id, user_id, department_id) VALUES (faculty_seq.NEXTVAL, 2, 2);
+INSERT INTO faculty (faculty_id, user_id, department_id) VALUES (faculty_seq.NEXTVAL, 2, 1);
+INSERT INTO faculty (faculty_id, user_id, department_id) VALUES (faculty_seq.NEXTVAL, 3, 1);
 
--- Subjects
-INSERT INTO subjects (subject_id, name, department_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Data Structures', 1, 1);
-INSERT INTO subjects (subject_id, name, department_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Algorithms', 1, 1);
-INSERT INTO subjects (subject_id, name, department_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Circuits', 2, 2);
+-- Subjects (5 subjects for each batch taught by different faculty)
+-- Batch 1 (2Q31)
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Data Structures', 1, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Algorithms', 1, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Database Systems', 1, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Web Development', 1, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Software Engineering', 1, 3);
 
--- Students: Generate 150
--- For simplicity, insert a few manually, assume script or loop in Python for full 150
-INSERT INTO users (user_id, email, password, name, role) VALUES (users_seq.NEXTVAL, 'student1@univ.edu', 'pass123', 'Alice Johnson', 'student');
-INSERT INTO students (student_id, user_id, department_id, semester, cgpa, total_credits) VALUES (students_seq.NEXTVAL, 3, 1, 4, 8.5, 120);
+-- Batch 2 (2Q32)
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Data Structures', 2, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Algorithms', 2, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Database Systems', 2, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Web Development', 2, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Software Engineering', 2, 3);
 
--- Repeat for 150, but to save time, insert 10 as example
--- In practice, use a loop or script
+-- Batch 3-5 (similar structure)
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Data Structures', 3, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Algorithms', 3, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Database Systems', 3, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Web Development', 3, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Software Engineering', 3, 3);
 
--- Marks for student1
-INSERT INTO marks (mark_id, student_id, subject_id, marks, grade) VALUES (marks_seq.NEXTVAL, 1, 1, 85, 'A');
-INSERT INTO marks (mark_id, student_id, subject_id, marks, grade) VALUES (marks_seq.NEXTVAL, 1, 2, 90, 'A');
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Data Structures', 4, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Algorithms', 4, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Database Systems', 4, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Web Development', 4, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Software Engineering', 4, 3);
 
--- Attendance
-INSERT INTO attendance (attendance_id, student_id, subject_id, attendance_date, status) VALUES (attendance_seq.NEXTVAL, 1, 1, SYSDATE, 'present');
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Data Structures', 5, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Algorithms', 5, 1);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Database Systems', 5, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Web Development', 5, 2);
+INSERT INTO subjects (subject_id, name, batch_id, faculty_id) VALUES (subjects_seq.NEXTVAL, 'Software Engineering', 5, 3);
 
--- Alerts
-INSERT INTO alerts (alert_id, student_id, message, is_read) VALUES (alerts_seq.NEXTVAL, 1, 'Your marks have been updated', 0);
-
--- Feedback
-INSERT INTO feedback (feedback_id, student_id, faculty_id, message) VALUES (feedback_seq.NEXTVAL, 1, 1, 'Great class!');
+COMMIT;

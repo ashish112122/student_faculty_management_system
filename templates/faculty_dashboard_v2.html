@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Faculty Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        header { background: #16a085; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .user-info-header { text-align: right; }
+        .user-info-header p { margin: 2px 0; font-size: 14px; opacity: 0.9; }
+        .sidebar { position: fixed; left: 0; top: 60px; width: 250px; height: calc(100vh - 60px); background: #138d75; color: white; transform: translateX(-250px); transition: transform 0.3s; z-index: 100; box-shadow inset 2px 0 5px rgba(0,0,0,0.2); overflow-y: auto; }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar ul { list-style: none; padding: 1rem 0; }
+        .sidebar li { padding: 0; }
+        .sidebar a { display: block; padding: 1rem 1.5rem; color: white; text-decoration: none; transition: background 0.3s; border-left: 4px solid transparent; }
+        .sidebar a:hover { background: #117a66; border-left-color: #1abc9c; }
+        .sidebar-overlay { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 99; }
+        .sidebar-overlay.active { display: block; }
+        .container { margin-left: 0; padding: 2rem; }
+        .dashboard-info { background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .dashboard-info h2 { color: #16a085; margin-bottom: 1rem; }
+        .info-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .info-item { background: #e8f8f5; padding: 1rem; border-radius: 6px; }
+        .info-item label { display: block; font-size: 12px; color: #117a66; text-transform: uppercase; margin-bottom: 5px; }
+        .info-item value { display: block; font-size: 24px; font-weight: bold; color: #16a085; }
+        .boxes-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-top: 2rem; }
+        @media (max-width: 768px) { .boxes-container { grid-template-columns: 1fr; } }
+        .box { background: white; padding: 2rem; border-radius: 8px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .box:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .box h3 { color: #16a085; margin-bottom: 1rem; font-size: 24px; }
+        .box-icon { font-size: 48px; margin: 1rem 0; }
+        .box-desc { color: #7f8c8d; font-size: 14px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #16a085; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 2rem; border-radius: 8px; max-width: 700px; max-height: 80vh; overflow-y: auto; width: 90%; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #ecf0f1; padding-bottom: 1rem; }
+        .modal-header h2 { color: #16a085; }
+        #logout { background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
+        #logout:hover { background: #c0392b; }
+        .form-group { margin: 1rem 0; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #16a085; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; }
+        .form-group button { background: #16a085; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 0.5rem; }
+        .form-group button:hover { background: #117a66; }
+        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+        .subject-item { background: #f0f0f0; padding: 1rem; border-radius: 4px; cursor: pointer; text-align: center; border-left: 4px solid #16a085; }
+        .subject-item:hover { background: #e8e8e8; }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="menu-btn" id="menu-toggle">☰</button>
+        <div class="user-info-header">
+            <p id="user-name">Faculty Name</p>
+            <p id="dept-info">CSE</p>
+        </div>
+        <button id="logout">Logout</button>
+    </header>
+    
+    <div class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="#" onclick="closeSidebar()">Dashboard</a></li>
+            <li><a href="#" onclick="closeSidebar()">Marks</a></li>
+            <li><a href="#" onclick="closeSidebar()">Attendance</a></li>
+            <li><a href="#" onclick="closeSidebar()">Feedback</a></li>
+            <li><a href="#" onclick="closeSidebar()">Reports</a></li>
+        </ul>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    
+    <div class="container">
+        <div class="dashboard-info">
+            <h2>Faculty Dashboard</h2>
+            <div class="info-row">
+                <div class="info-item">
+                    <label>Department</label>
+                    <value id="dept">CSE</value>
+                </div>
+            </div>
+        </div>
+        
+        <div class="boxes-container">
+            <div class="box" onclick="openMarksWindow()">
+                <div class="box-icon">📝</div>
+                <h3>Add/Edit Marks</h3>
+                <p class="box-desc">Update student marks for assessments</p>
+            </div>
+            <div class="box" onclick="openAttendanceWindow()">
+                <div class="box-icon">✓</div>
+                <h3>Mark Attendance</h3>
+                <p class="box-desc">Record attendance for students</p>
+            </div>
+            <div class="box" onclick="openReportsWindow()">
+                <div class="box-icon">📊</div>
+                <h3>Reports</h3>
+                <p class="box-desc">View marks and attendance reports</p>
+            </div>
+            <div class="box" onclick="openFeedbackWindow()">
+                <div class="box-icon">💬</div>
+                <h3>Feedback</h3>
+                <p class="box-desc">Interact with students</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Marks Modal - Select Batch -->
+    <div class="modal" id="marksModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Batch for Marks</h2>
+                <button class="close-btn" onclick="closeModal('marksModal')">✕</button>
+            </div>
+            <div id="batchesForMarks" class="subjects-grid"></div>
+        </div>
+    </div>
+    
+    <!-- Marks Modal - Select Student -->
+    <div class="modal" id="marksStudentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Student</h2>
+                <button class="close-btn" onclick="backToParent('marksModal')">← Back</button>
+            </div>
+            <div id="studentsForMarks" class="subjects-grid"></div>
+        </div>
+    </div>
+    
+    <!-- Marks Add/Edit Modal -->
+    <div class="modal" id="marksEditModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="marksEditTitle">Add/Edit Marks</h2>
+                <button class="close-btn" onclick="backToParent('marksStudentModal')">← Back</button>
+            </div>
+            <form id="marksEditForm">
+                <div class="form-group">
+                    <label>Subject</label>
+                    <select id="marksEditSubject" required>
+                        <option value="">Choose Subject</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>MST Marks</label>
+                    <input type="number" id="mstMarks" min="0" max="30">
+                </div>
+                <div class="form-group">
+                    <label>EST Marks</label>
+                    <input type="number" id="estMarks" min="0" max="30">
+                </div>
+                <div class="form-group">
+                    <label>Quiz Marks</label>
+                    <input type="number" id="quizMarks" min="0" max="20">
+                </div>
+                <div class="form-group">
+                    <label>Assignment Marks</label>
+                    <input type="number" id="assignmentMarks" min="0" max="20">
+                </div>
+                <button type="submit">Save Marks</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Attendance Modal -->
+    <div class="modal" id="attendanceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Batch for Attendance</h2>
+                <button class="close-btn" onclick="closeModal('attendanceModal')">✕</button>
+            </div>
+            <div id="batchesForAttendance" class="subjects-grid"></div>
+        </div>
+    </div>
+    
+    <!-- Attendance - Select Student -->
+    <div class="modal" id="attendanceStudentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Student</h2>
+                <button class="close-btn" onclick="backToParent('attendanceModal')">← Back</button>
+            </div>
+            <div id="studentsForAttendance" class="subjects-grid"></div>
+        </div>
+    </div>
+    
+    <!-- Attendance Mark Modal -->
+    <div class="modal" id="attendanceMarkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="attendanceMarkTitle">Mark Attendance</h2>
+                <button class="close-btn" onclick="backToParent('attendanceStudentModal')">← Back</button>
+            </div>
+            <form id="attendanceMarkForm">
+                <div class="form-group">
+                    <label>Subject</label>
+                    <select id="attendanceSubject" required>
+                        <option value="">Choose Subject</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="attendanceStatus" required>
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                    </select>
+                </div>
+                <button type="submit">Mark Attendance</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Reports Modal -->
+    <div class="modal" id="reportsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Report Type</h2>
+                <button class="close-btn" onclick="closeModal('reportsModal')">✕</button>
+            </div>
+            <div class="boxes-container">
+                <div class="box" onclick="generateMarksReport()">
+                    <h4>Marks Report</h4>
+                </div>
+                <div class="box" onclick="generateAttendanceReport()">
+                    <h4>Attendance Report</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feedback Modal -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Batch for Feedback</h2>
+                <button class="close-btn" onclick="closeModal('feedbackModal')">✕</button>
+            </div>
+            <div id="batchesForFeedback" class="subjects-grid"></div>
+        </div>
+    </div>
+    
+    <!-- Feedback - Student List -->
+    <div class="modal" id="feedbackStudentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Student Feedback Threads</h2>
+                <button class="close-btn" onclick="backToParent('feedbackModal')">← Back</button>
+            </div>
+            <div id="feedbackStudents"></div>
+        </div>
+    </div>
+    
+    <!-- Feedback Chat Modal -->
+    <div class="modal" id="feedbackChatModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="feedbackChatTitle">Chat with Student</h2>
+                <button class="close-btn" onclick="backToParent('feedbackStudentModal')">← Back</button>
+            </div>
+            <div id="feedbackChatContent" style="height: 300px; overflow-y: auto; margin-bottom: 1rem; background: #f9f9f9; padding: 1rem; border-radius: 4px;"></div>
+            <form id="feedbackSendForm">
+                <textarea id="feedbackMessage" placeholder="Type your response..." style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                <button type="submit" style="margin-top: 0.5rem; background: #16a085; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Send</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let currentBatchId = null;
+        let currentStudentId = null;
+        let currentSubjectId = null;
+        
+        document.getElementById('menu-toggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        });
+        
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+        }
+        
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        function backToParent(parentModalId) {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            openModal(parentModalId);
+        }
+        
+        async function loadFacultyInfo() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/info`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                document.getElementById('user-name').textContent = data.name;
+                document.getElementById('dept-info').textContent = data.dept;
+                document.getElementById('dept').textContent = data.dept;
+            } catch (e) { console.error(e); }
+        }
+        
+        async function loadBatches(containerId, action) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/batches`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const batches = await res.json();
+                let html = '';
+                batches.forEach(b => {
+                    html += `<div class="subject-item" onclick="selectBatch(${b.bid}, '${action}')">${b.name}</div>`;
+                });
+                document.getElementById(containerId).innerHTML = html;
+            } catch (e) { console.error(e); }
+        }
+        
+        function selectBatch(id, action) {
+            currentBatchId = id;
+            if (action === 'marks') {
+                loadStudents(id, 'studentsForMarks');
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('marksStudentModal');
+            } else if (action === 'attendance') {
+                loadStudents(id, 'studentsForAttendance');
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('attendanceStudentModal');
+            } else if (action === 'feedback') {
+                loadFeedbackStudents(id);
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('feedbackStudentModal');
+            }
+        }
+        
+        async function loadStudents(batchId, containerId) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/students/${batchId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const students = await res.json();
+                let html = '';
+                students.forEach(s => {
+                    html += `<div class="subject-item" onclick="selectStudent(${s.stud_id})">${s.name}</div>`;
+                });
+                document.getElementById(containerId).innerHTML = html;
+            } catch (e) { console.error(e); }
+        }
+        
+        function selectStudent(id) {
+            currentStudentId = id;
+            if (document.getElementById('marksStudentModal').classList.contains('active')) {
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('marksEditModal');
+            } else if (document.getElementById('attendanceStudentModal').classList.contains('active')) {
+                loadSubjects();
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+                openModal('attendanceMarkModal');
+            }
+        }
+        
+        async function loadSubjects() {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/subjects`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const subjects = await res.json();
+                const select = document.getElementById('marksEditSubject') || document.getElementById('attendanceSubject');
+                select.innerHTML = '<option value="">Choose Subject</option>';
+                subjects.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.sid;
+                    opt.textContent = s.name;
+                    select.appendChild(opt);
+                });
+            } catch (e) { console.error(e); }
+        }
+        
+        async function loadFeedbackStudents(batchId) {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/feedback/${batchId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const students = await res.json();
+                let html = '<div style="max-height: 300px; overflow-y: auto;">';
+                students.forEach(s => {
+                    html += `<div class="subject-item" onclick="selectStudentForFeedback(${s.student_id}, '${s.student_name}')">${s.student_name}</div>`;
+                });
+                html += '</div>';
+                document.getElementById('feedbackStudents').innerHTML = html;
+            } catch (e) { console.error(e); }
+        }
+        
+        function selectStudentForFeedback(id, name) {
+            currentStudentId = id;
+            document.getElementById('feedbackChatTitle').textContent = `Chat with ${name}`;
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            openModal('feedbackChatModal');
+            loadFeedbackChat();
+        }
+        
+        async function loadFeedbackChat() {
+            document.getElementById('feedbackChatContent').innerHTML = '<div>Chat thread loading...</div>';
+        }
+        
+        document.getElementById('marksEditForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const subj = document.getElementById('marksEditSubject').value;
+            const data = {
+                stud_id: currentStudentId,
+                sid: subj,
+                mst: parseFloat(document.getElementById('mstMarks').value) || undefined,
+                est: parseFloat(document.getElementById('estMarks').value) || undefined,
+                quiz: parseFloat(document.getElementById('quizMarks').value) || undefined,
+                assignment: parseFloat(document.getElementById('assignmentMarks').value) || undefined
+            };
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/update_marks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert('Marks updated successfully');
+                    document.getElementById('marksEditForm').reset();
+                    closeModal('marksEditModal');
+                }
+            } catch (e) { console.error(e); }
+        });
+        
+        document.getElementById('attendanceMarkForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const data = {
+                stud_id: currentStudentId,
+                sid: document.getElementById('attendanceSubject').value,
+                status: document.getElementById('attendanceStatus').value
+            };
+            try {
+                const res = await fetch(`${API_BASE}/api/faculty/update_attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert('Attendance marked successfully');
+                    closeModal('attendanceMarkModal');
+                }
+            } catch (e) { console.error(e); }
+        });
+        
+        function openMarksWindow() { openModal('marksModal'); loadBatches('batchesForMarks', 'marks'); }
+        function openAttendanceWindow() { openModal('attendanceModal'); loadBatches('batchesForAttendance', 'attendance'); }
+        function openReportsWindow() { openModal('reportsModal'); }
+        function openFeedbackWindow() { openModal('feedbackModal'); loadBatches('batchesForFeedback', 'feedback'); }
+        
+        function generateMarksReport() { alert('Marks report feature coming soon'); }
+        function generateAttendanceReport() { alert('Attendance report feature coming soon'); }
+        
+        document.getElementById('logout').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        });
+        
+        window.addEventListener('load', loadFacultyInfo);
+    </script>
+</body>
+</html>

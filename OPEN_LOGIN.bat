@@ -1,23 +1,19 @@
 @echo off
 echo ========================================
-echo   STUDENT FACULTY MANAGEMENT SYSTEM
+echo Opening Student-Faculty Login Page
 echo ========================================
 echo.
-echo Opening login page...
+echo Backend should be running on http://localhost:5000
 echo.
-echo CREDENTIALS:
-echo.
-echo STUDENT:
-echo   Email: rohan.das.2q15.0@thapar.edu
-echo   Password: pass123
-echo.
-echo FACULTY:
-echo   Email: dr.rajesh@thaparfac.edu
-echo   Password: pass123
+echo Test Credentials:
+echo   Student: rohan.sharma.2q34.3@thapar.edu / pass123
+echo   Faculty: dr.rajesh@thaparfac.edu / pass123
 echo.
 echo ========================================
 echo.
-start frontend/login_test.html
-echo Login page opened in browser!
+
+start frontend\login_test.html
+
+echo Login page opened in your default browser!
 echo.
 pause

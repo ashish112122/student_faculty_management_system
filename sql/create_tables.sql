@@ -1,13 +1,10 @@
 -- Drop tables if exist
 DROP TABLE feedback CASCADE CONSTRAINTS;
-DROP TABLE alerts CASCADE CONSTRAINTS;
 DROP TABLE attendance CASCADE CONSTRAINTS;
 DROP TABLE marks CASCADE CONSTRAINTS;
 DROP TABLE subjects CASCADE CONSTRAINTS;
 DROP TABLE faculty CASCADE CONSTRAINTS;
 DROP TABLE students CASCADE CONSTRAINTS;
-DROP TABLE users CASCADE CONSTRAINTS;
-DROP TABLE departments CASCADE CONSTRAINTS;
 DROP SEQUENCE users_seq;
 DROP SEQUENCE students_seq;
 DROP SEQUENCE faculty_seq;
@@ -17,12 +14,23 @@ DROP SEQUENCE attendance_seq;
 DROP SEQUENCE alerts_seq;
 DROP SEQUENCE feedback_seq;
 DROP SEQUENCE departments_seq;
+DROP SEQUENCE batches_seq;
+DROP TABLE users CASCADE CONSTRAINTS;
+DROP TABLE departments CASCADE CONSTRAINTS;
+DROP TABLE batches CASCADE CONSTRAINTS;
+DROP TABLE alerts CASCADE CONSTRAINTS;
 
 -- Create tables for Student-Faculty Management System
 
 -- Departments
 CREATE TABLE departments (
     department_id NUMBER PRIMARY KEY,
+    name VARCHAR2(100) NOT NULL
+);
+
+-- Batches (for grouping students)
+CREATE TABLE batches (
+    batch_id NUMBER PRIMARY KEY,
     name VARCHAR2(100) NOT NULL
 );
 
@@ -39,7 +47,7 @@ CREATE TABLE users (
 CREATE TABLE students (
     student_id NUMBER PRIMARY KEY,
     user_id NUMBER REFERENCES users(user_id),
-    department_id NUMBER REFERENCES departments(department_id),
+    batch_id NUMBER REFERENCES batches(batch_id),
     semester NUMBER,
     cgpa NUMBER(3,2),
     total_credits NUMBER
@@ -56,16 +64,20 @@ CREATE TABLE faculty (
 CREATE TABLE subjects (
     subject_id NUMBER PRIMARY KEY,
     name VARCHAR2(100) NOT NULL,
-    department_id NUMBER REFERENCES departments(department_id),
+    batch_id NUMBER REFERENCES batches(batch_id),
     faculty_id NUMBER REFERENCES faculty(faculty_id)
 );
 
--- Marks
+-- Marks (MST, EST, Quiz, Assignment)
 CREATE TABLE marks (
     mark_id NUMBER PRIMARY KEY,
     student_id NUMBER REFERENCES students(student_id),
     subject_id NUMBER REFERENCES subjects(subject_id),
-    marks NUMBER,
+    mst NUMBER,
+    est NUMBER,
+    quiz NUMBER,
+    assignment NUMBER,
+    total NUMBER,
     grade VARCHAR2(2)
 );
 
@@ -74,7 +86,7 @@ CREATE TABLE attendance (
     attendance_id NUMBER PRIMARY KEY,
     student_id NUMBER REFERENCES students(student_id),
     subject_id NUMBER REFERENCES subjects(subject_id),
-    attendance_date DATE NOT NULL,
+    att_date DATE NOT NULL,
     status VARCHAR2(10) CHECK (status IN ('present', 'absent')) NOT NULL
 );
 
@@ -87,13 +99,16 @@ CREATE TABLE alerts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Feedback
+-- Feedback (chat between student and faculty)
 CREATE TABLE feedback (
     feedback_id NUMBER PRIMARY KEY,
     student_id NUMBER REFERENCES students(student_id),
     faculty_id NUMBER REFERENCES faculty(faculty_id),
+    subject_id NUMBER REFERENCES subjects(subject_id),
+    sender_type VARCHAR2(20) CHECK (sender_type IN ('student', 'faculty')) NOT NULL,
     message VARCHAR2(500) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_read NUMBER(1) DEFAULT 0,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Sequences for auto-increment
@@ -106,3 +121,4 @@ CREATE SEQUENCE attendance_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE alerts_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE feedback_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE departments_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE batches_seq START WITH 1 INCREMENT BY 1;

@@ -17,7 +17,7 @@ body {
 
 .left-section {
     flex: 1;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2C2C2C;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -39,7 +39,7 @@ body {
 
 h2 {
     margin-bottom: 30px;
-    color: #333;
+    color: #2C2C2C;
     font-size: 32px;
 }
 
@@ -50,20 +50,20 @@ h2 {
 input {
     width: 100%;
     padding: 15px;
-    border: 1px solid #ddd;
+    border: 1px solid #EAEAEA;
     border-radius: 5px;
     font-size: 16px;
 }
 
 input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #3A7BD5;
 }
 
 .btn-login {
     width: 100%;
     padding: 15px;
-    background: #667eea;
+    background: #3A7BD5;
     color: white;
     border: none;
     border-radius: 5px;
@@ -73,11 +73,11 @@ input:focus {
 }
 
 .btn-login:hover {
-    background: #5568d3;
+    background: #2d5fa8;
 }
 
 .error {
-    color: red;
+    color: #dc3545;
     margin-top: 15px;
     display: none;
 }

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Links - Student Faculty Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #2C2C2C 0%, #4A5568 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2C2C2C;
+            margin-bottom: 15px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #4A5568;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        
+        .portal-grid {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .portal-btn {
+            display: block;
+            padding: 20px 30px;
+            background: #3A7BD5;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: 2px solid #3A7BD5;
+        }
+        
+        .portal-btn:hover {
+            background: #2d5fa8;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(58,123,213,0.3);
+        }
+        
+        .portal-btn.login {
+            background: #2AA198;
+            border-color: #2AA198;
+        }
+        
+        .portal-btn.login:hover {
+            background: #238b83;
+        }
+        
+        .portal-btn.student {
+            background: white;
+            color: #3A7BD5;
+            border: 2px solid #3A7BD5;
+        }
+        
+        .portal-btn.student:hover {
+            background: #f0f7ff;
+        }
+        
+        .portal-btn.faculty {
+            background: white;
+            color: #2AA198;
+            border: 2px solid #2AA198;
+        }
+        
+        .portal-btn.faculty:hover {
+            background: #e6f7f5;
+        }
+        
+        .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .info-box {
+            background: #F5F5F5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #3A7BD5;
+        }
+        
+        .info-box h3 {
+            color: #2C2C2C;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .info-box p {
+            color: #4A5568;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .credentials {
+            text-align: left;
+            margin-top: 15px;
+        }
+        
+        .credentials strong {
+            color: #2C2C2C;
+        }
+        
+        .credentials code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #3A7BD5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Portal Access</h1>
+        <p class="subtitle">Student Faculty Management System</p>
+        
+        <div class="portal-grid">
+            <a href="frontend/login_test.html" class="portal-btn login">
+                <span class="icon">🔐</span>
+                Login Page
+            </a>
+            
+            <a href="frontend/student_portal.html" class="portal-btn student">
+                <span class="icon">👨‍🎓</span>
+                Student Portal
+            </a>
+            
+            <a href="frontend/faculty_portal.html" class="portal-btn faculty">
+                <span class="icon">👨‍🏫</span>
+                Faculty Portal
+            </a>
+        </div>
+        
+        <div class="info-box">
+            <h3>📝 Test Credentials</h3>
+            
+            <div class="credentials">
+                <p><strong>Student Login:</strong></p>
+                <p>Email: <code>rohan.sharma.2q34.3@thapar.edu</code></p>
+                <p>Password: <code>pass123</code></p>
+                <p>Roll No: <code>12</code> | Batch: <code>2Q34</code></p>
+            </div>
+            
+            <div class="credentials" style="margin-top: 15px;">
+                <p><strong>Faculty Login:</strong></p>
+                <p>Email: <code>dr.rajesh@thaparfac.edu</code></p>
+                <p>Password: <code>pass123</code></p>
+                <p>Faculty ID: <code>FAC001</code></p>
+            </div>
+        </div>
+        
+        <div class="info-box" style="border-left-color: #2AA198; margin-top: 20px;">
+            <h3>ℹ️ Quick Info</h3>
+            <p>
+                <strong>Backend:</strong> http://localhost:5000<br>
+                <strong>Status:</strong> ✅ Running<br>
+                <strong>Date Range:</strong> 1 Jan 2026 - 1 May 2026
+            </p>
+        </div>
+    </div>
+</body>
+</html>
