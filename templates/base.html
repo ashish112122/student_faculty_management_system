@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student-Faculty Management System</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <header>
+        <h1>SFS</h1>
+        <nav>
+            <a href="#" id="logout">Logout</a>
+        </nav>
+    </header>
+    <div class="container">
+        <aside id="sidebar">
+            <!-- Sidebar content -->
+        </aside>
+        <main id="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <footer>
+        <p>&copy; 2026 University</p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="static/app.js"></script>
+</body>
+</html>

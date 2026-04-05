@@ -10,7 +10,7 @@ start "Backend Server" cmd /k "cd backend && python app.py"
 timeout /t 3 /nobreak >nul
 
 echo Opening login page...
-start "" "frontend\templates\login.html"
+start "" "frontend\login_no_logo.html"
 
 echo.
 echo ============================================================

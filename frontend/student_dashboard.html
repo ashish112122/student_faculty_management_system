@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 12px 20px; margin: 5px 0; border-radius: 8px; transition: all 0.3s; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,0.2); color: white; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0 !important; padding: 15px 20px; }
+        .stat-card { padding: 20px; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: #667eea; }
+        .stat-label { color: #6c757d; font-size: 0.9rem; }
+        .progress { height: 25px; border-radius: 10px; }
+        .alert-critical { border-left: 4px solid #dc3545; }
+        .alert-warning { border-left: 4px solid #ffc107; }
+        .alert-info { border-left: 4px solid #0dcaf0; }
+        .table-hover tbody tr:hover { background-color: #f8f9fa; }
+        .badge-grade { font-size: 1rem; padding: 8px 12px; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-3">
+                <h4 class="text-white mb-4"><i class="bi bi-mortarboard-fill"></i> Student Portal</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link active" href="#" onclick="showSection('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('marks')"><i class="bi bi-clipboard-data"></i> Marks</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('attendance')"><i class="bi bi-calendar-check"></i> Attendance</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('alerts')"><i class="bi bi-bell"></i> Alerts</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section">
+                    <h2 class="mb-4">Welcome, <span id="student-name"></span></h2>
+                    
+                    <!-- Stats Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="stat-value" id="cgpa-value">-</div>
+                                <div class="stat-label">CGPA</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="stat-value" id="semester-value">-</div>
+                                <div class="stat-label">Semester</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="stat-value" id="credits-value">-</div>
+                                <div class="stat-label">Total Credits</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card">
+                                <div class="stat-value" id="subjects-count">-</div>
+                                <div class="stat-label">Subjects</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Info -->
+                    <div class="card mb-4">
+                        <div class="card-header"><i class="bi bi-person-circle"></i> Student Information</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6"><strong>Branch:</strong> <span id="branch-value"></span></div>
+                                <div class="col-md-6"><strong>Class:</strong> <span id="class-value"></span></div>
+                                <div class="col-md-6"><strong>Section:</strong> <span id="section-value"></span></div>
+                                <div class="col-md-6"><strong>Year:</strong> <span id="year-value"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Overview -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header"><i class="bi bi-graph-up"></i> Recent Marks Overview</div>
+                                <div class="card-body">
+                                    <canvas id="marks-overview-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header"><i class="bi bi-exclamation-triangle"></i> Recent Alerts</div>
+                                <div class="card-body" id="dashboard-alerts">
+                                    <p class="text-muted">Loading alerts...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marks Section -->
+                <div id="marks-section" style="display:none;">
+                    <h2 class="mb-4"><i class="bi bi-clipboard-data"></i> Marks & Grades</h2>
+                    <div class="card">
+                        <div class="card-header">All Assessments</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>Code</th>
+                                            <th>Assessment</th>
+                                            <th>Marks</th>
+                                            <th>Percentage</th>
+                                            <th>Grade</th>
+                                            <th>Class Avg</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="marks-table-body">
+                                        <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-4">
+                        <div class="card-header">Performance Comparison</div>
+                        <div class="card-body">
+                            <canvas id="marks-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Section -->
+                <div id="attendance-section" style="display:none;">
+                    <h2 class="mb-4"><i class="bi bi-calendar-check"></i> Attendance</h2>
+                    <div class="card">
+                        <div class="card-header">Subject-wise Attendance</div>
+                        <div class="card-body" id="attendance-container">
+                            <p class="text-muted">Loading attendance...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Section -->
+                <div id="alerts-section" style="display:none;">
+                    <h2 class="mb-4"><i class="bi bi-bell"></i> Alerts & Notifications</h2>
+                    <div class="card">
+                        <div class="card-header">All Alerts</div>
+                        <div class="card-body" id="alerts-container">
+                            <p class="text-muted">Loading alerts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login_test.html';
+        }
+
+        let marksChart = null;
+        let overviewChart = null;
+
+        function showSection(section) {
+            document.querySelectorAll('[id$="-section"]').forEach(el => el.style.display = 'none');
+            document.getElementById(section + '-section').style.display = 'block';
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => link.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (section === 'marks') loadMarks();
+            if (section === 'attendance') loadAttendance();
+            if (section === 'alerts') loadAllAlerts();
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_URL}/student/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                document.getElementById('student-name').textContent = data.name;
+                document.getElementById('cgpa-value').textContent = data.cgpa.toFixed(2);
+                document.getElementById('semester-value').textContent = data.semester;
+                document.getElementById('credits-value').textContent = data.total_credits;
+                document.getElementById('subjects-count').textContent = data.subjects.length;
+                document.getElementById('branch-value').textContent = data.branch;
+                document.getElementById('class-value').textContent = data.class_name;
+                document.getElementById('section-value').textContent = data.section;
+                document.getElementById('year-value').textContent = data.year;
+                
+                loadMarksOverview();
+                loadDashboardAlerts();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function loadMarksOverview() {
+            try {
+                const response = await fetch(`${API_URL}/student/marks`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const marks = await response.json();
+                
+                const subjectAvg = {};
+                marks.forEach(m => {
+                    if (!subjectAvg[m.subject_name]) {
+                        subjectAvg[m.subject_name] = { total: 0, count: 0, classAvg: 0 };
+                    }
+                    subjectAvg[m.subject_name].total += m.percentage;
+                    subjectAvg[m.subject_name].count++;
+                    subjectAvg[m.subject_name].classAvg += m.class_average;
+                });
+                
+                const subjects = Object.keys(subjectAvg).slice(0, 5);
+                const studentPercentages = subjects.map(s => (subjectAvg[s].total / subjectAvg[s].count).toFixed(2));
+                const classPercentages = subjects.map(s => (subjectAvg[s].classAvg / subjectAvg[s].count).toFixed(2));
+                
+                const ctx = document.getElementById('marks-overview-chart');
+                if (overviewChart) overviewChart.destroy();
+                overviewChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: subjects,
+                        datasets: [{
+                            label: 'My Performance',
+                            data: studentPercentages,
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                        }, {
+                            label: 'Class Average',
+                            data: classPercentages,
+                            backgroundColor: 'rgba(118, 75, 162, 0.8)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, max: 100 } }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading marks overview:', error);
+            }
+        }
+
+        async function loadDashboardAlerts() {
+            try {
+                const response = await fetch(`${API_URL}/student/alerts`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const alerts = await response.json();
+                
+                const container = document.getElementById('dashboard-alerts');
+                if (alerts.length === 0) {
+                    container.innerHTML = '<p class="text-success"><i class="bi bi-check-circle"></i> No alerts! Keep up the good work!</p>';
+                } else {
+                    container.innerHTML = alerts.slice(0, 5).map(alert => `
+                        <div class="alert alert-${alert.alert_type === 'Critical' ? 'danger' : alert.alert_type === 'Warning' ? 'warning' : 'info'} alert-sm mb-2">
+                            <small><strong>${alert.alert_type}:</strong> ${alert.message}</small>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        async function loadMarks() {
+            try {
+                const response = await fetch(`${API_URL}/student/marks`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const marks = await response.json();
+                
+                const tbody = document.getElementById('marks-table-body');
+                if (marks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No marks available yet</td></tr>';
+                } else {
+                    tbody.innerHTML = marks.map(m => `
+                        <tr>
+                            <td>${m.subject_name}</td>
+                            <td>${m.subject_code}</td>
+                            <td>${m.assessment_type}</td>
+                            <td>${m.marks_obtained}/${m.max_marks}</td>
+                            <td>${m.percentage}%</td>
+                            <td><span class="badge badge-grade bg-${m.grade.includes('A') ? 'success' : m.grade.includes('B') ? 'primary' : m.grade.includes('C') ? 'warning' : 'danger'}">${m.grade}</span></td>
+                            <td>${m.class_average}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                // Chart
+                const subjectData = {};
+                marks.forEach(m => {
+                    if (!subjectData[m.subject_code]) {
+                        subjectData[m.subject_code] = { student: [], class: [] };
+                    }
+                    subjectData[m.subject_code].student.push(m.percentage);
+                    subjectData[m.subject_code].class.push(m.class_average);
+                });
+                
+                const subjects = Object.keys(subjectData);
+                const studentAvg = subjects.map(s => (subjectData[s].student.reduce((a,b) => a+b, 0) / subjectData[s].student.length).toFixed(2));
+                const classAvg = subjects.map(s => (subjectData[s].class.reduce((a,b) => a+b, 0) / subjectData[s].class.length).toFixed(2));
+                
+                const ctx = document.getElementById('marks-chart');
+                if (marksChart) marksChart.destroy();
+                marksChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: subjects,
+                        datasets: [{
+                            label: 'My Average',
+                            data: studentAvg,
+                            borderColor: 'rgb(102, 126, 234)',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: 'Class Average',
+                            data: classAvg,
+                            borderColor: 'rgb(118, 75, 162)',
+                            backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, max: 100 } }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading marks:', error);
+            }
+        }
+
+        async function loadAttendance() {
+            try {
+                const response = await fetch(`${API_URL}/student/attendance`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const attendance = await response.json();
+                
+                const container = document.getElementById('attendance-container');
+                if (attendance.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No attendance records available</p>';
+                } else {
+                    container.innerHTML = attendance.map(a => `
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>${a.subject_name} (${a.subject_code})</strong>
+                                <span class="badge bg-${a.status === 'Good' ? 'success' : a.status === 'Warning' ? 'warning' : 'danger'}">${a.percentage}%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-${a.status === 'Good' ? 'success' : a.status === 'Warning' ? 'warning' : 'danger'}" 
+                                     style="width: ${a.percentage}%">${a.attended}/${a.total_classes}</div>
+                            </div>
+                            <small class="text-muted">Attended: ${a.attended} | Total: ${a.total_classes}</small>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+            }
+        }
+
+        async function loadAllAlerts() {
+            try {
+                const response = await fetch(`${API_URL}/student/alerts`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const alerts = await response.json();
+                
+                const container = document.getElementById('alerts-container');
+                if (alerts.length === 0) {
+                    container.innerHTML = '<p class="text-success"><i class="bi bi-check-circle-fill"></i> No alerts! You are doing great!</p>';
+                } else {
+                    container.innerHTML = alerts.map(alert => `
+                        <div class="alert alert-${alert.alert_type === 'Critical' ? 'danger' : alert.alert_type === 'Warning' ? 'warning' : 'info'} alert-${alert.alert_type.toLowerCase()} mb-3">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong><i class="bi bi-exclamation-triangle-fill"></i> ${alert.alert_type}</strong>
+                                    <p class="mb-0">${alert.message}</p>
+                                </div>
+                                <small class="text-muted">${alert.created_at}</small>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login_test.html';
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

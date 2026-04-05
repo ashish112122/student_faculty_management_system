@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Dynamic</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; }
+        .sidebar h2 { margin-bottom: 30px; font-size: 24px; }
+        .sidebar nav a { display: block; color: white; text-decoration: none; padding: 12px 15px; margin: 5px 0; border-radius: 8px; transition: 0.3s; }
+        .sidebar nav a:hover, .sidebar nav a.active { background: rgba(255,255,255,0.2); }
+        .main { flex: 1; padding: 30px; }
+        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
+        .stat-label { color: #666; font-size: 14px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .card h3 { margin-bottom: 20px; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: #f8f9fa; font-weight: 600; color: #333; }
+        table tr:hover { background: #f8f9fa; }
+        .badge { padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+        .badge-success { background: #28a745; color: white; }
+        .badge-primary { background: #007bff; color: white; }
+        .badge-warning { background: #ffc107; color: #333; }
+        .badge-danger { background: #dc3545; color: white; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid; }
+        .alert-critical { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .alert-info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .chart-container { position: relative; height: 300px; margin-top: 20px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .progress-bar { background: #e9ecef; height: 25px; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; background: #667eea; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; transition: width 0.3s; }
+        .progress-fill.warning { background: #ffc107; }
+        .progress-fill.danger { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>📚 Student Portal</h2>
+            <nav>
+                <a href="#" class="active" onclick="showSection('dashboard')">Dashboard</a>
+                <a href="#" onclick="showSection('marks')">Marks & Grades</a>
+                <a href="#" onclick="showSection('attendance')">Attendance</a>
+                <a href="#" onclick="showSection('alerts')">Alerts</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </nav>
+        </div>
+        
+        <div class="main">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <div class="header">
+                    <h1>Welcome, <span id="student-name">Loading...</span></h1>
+                    <p>Semester <span id="semester">-</span> | CGPA: <span id="cgpa">-</span></p>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="cgpa-stat">-</div>
+                        <div class="stat-label">CGPA</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="semester-stat">-</div>
+                        <div class="stat-label">Semester</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="credits-stat">-</div>
+                        <div class="stat-label">Total Credits</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="subjects-stat">-</div>
+                        <div class="stat-label">Subjects</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Performance Overview</h3>
+                    <div class="chart-container">
+                        <canvas id="overview-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🔔 Recent Alerts</h3>
+                    <div id="dashboard-alerts">Loading...</div>
+                </div>
+            </div>
+            
+            <!-- Marks Section -->
+            <div id="marks" class="section">
+                <div class="card">
+                    <h3>📝 Marks & Grades - All Assessments</h3>
+                    <table id="marks-table">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Faculty</th>
+                                <th>Mid (50)</th>
+                                <th>Final (100)</th>
+                                <th>Quiz (10)</th>
+                                <th>Assignment (20)</th>
+                                <th>Total (180)</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="marks-tbody">
+                            <tr><td colspan="8" style="text-align:center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <h3>📈 Performance Comparison - Student vs Class Average</h3>
+                    <div id="marks-charts"></div>
+                </div>
+            </div>
+            
+            <!-- Attendance Section -->
+            <div id="attendance" class="section">
+                <div class="card">
+                    <h3>📅 Attendance Summary</h3>
+                    <div id="attendance-container">Loading...</div>
+                </div>
+            </div>
+            
+            <!-- Alerts Section -->
+            <div id="alerts" class="section">
+                <div class="card">
+                    <h3>🔔 All Alerts & Notifications</h3>
+                    <div id="alerts-container">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login_test.html';
+        }
+        
+        let charts = {};
+        let dashboardData = null;
+        
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_URL}/student/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                dashboardData = await response.json();
+                
+                // Update header
+                document.getElementById('student-name').textContent = dashboardData.name;
+                document.getElementById('semester').textContent = dashboardData.semester;
+                document.getElementById('cgpa').textContent = dashboardData.cgpa.toFixed(2);
+                
+                // Update stats
+                document.getElementById('cgpa-stat').textContent = dashboardData.cgpa.toFixed(2);
+                document.getElementById('semester-stat').textContent = dashboardData.semester;
+                document.getElementById('credits-stat').textContent = dashboardData.total_credits;
+                document.getElementById('subjects-stat').textContent = dashboardData.marks.length;
+                
+                // Load all sections
+                loadOverviewChart();
+                loadDashboardAlerts();
+                loadMarksTable();
+                loadMarksCharts();
+                loadAttendance();
+                loadAlerts();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('Error loading dashboard. Please login again.');
+            }
+        }
+        
+        function loadOverviewChart() {
+            const subjects = dashboardData.marks.map(m => m.subject_code);
+            const studentTotals = dashboardData.marks.map(m => m.total);
+            const classAvgs = dashboardData.class_average.map(c => c.mid + c.final + c.quiz + c.assignment);
+            
+            const ctx = document.getElementById('overview-chart');
+            if (charts.overview) charts.overview.destroy();
+            charts.overview = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [{
+                        label: 'My Total Marks',
+                        data: studentTotals,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                    }, {
+                        label: 'Class Average',
+                        data: classAvgs,
+                        backgroundColor: 'rgba(118, 75, 162, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 180 } }
+                }
+            });
+        }
+        
+        function loadDashboardAlerts() {
+            const container = document.getElementById('dashboard-alerts');
+            if (dashboardData.alerts.length === 0) {
+                container.innerHTML = '<p style="color: #28a745;">✅ No alerts! Keep up the good work!</p>';
+            } else {
+                container.innerHTML = dashboardData.alerts.slice(0, 5).map(alert => `
+                    <div class="alert alert-${alert.type === 'Critical' ? 'critical' : alert.type === 'Warning' ? 'warning' : 'info'}">
+                        <strong>${alert.type}:</strong> ${alert.message}
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function loadMarksTable() {
+            const tbody = document.getElementById('marks-tbody');
+            if (dashboardData.marks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No marks available</td></tr>';
+            } else {
+                tbody.innerHTML = dashboardData.marks.map(m => {
+                    const gradeClass = m.grade.includes('A') ? 'success' : m.grade.includes('B') ? 'primary' : m.grade.includes('C') ? 'warning' : 'danger';
+                    return `
+                        <tr>
+                            <td>${m.subject}</td>
+                            <td>${m.faculty}</td>
+                            <td>${m.mid}</td>
+                            <td>${m.final}</td>
+                            <td>${m.quiz}</td>
+                            <td>${m.assignment}</td>
+                            <td><strong>${m.total}</strong></td>
+                            <td><span class="badge badge-${gradeClass}">${m.grade}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function loadMarksCharts() {
+            const container = document.getElementById('marks-charts');
+            container.innerHTML = '';
+            
+            dashboardData.marks.forEach((mark, index) => {
+                const classAvg = dashboardData.class_average.find(c => c.subject_id === mark.subject_id);
+                
+                const chartDiv = document.createElement('div');
+                chartDiv.style.marginBottom = '30px';
+                chartDiv.innerHTML = `
+                    <h4 style="margin-bottom: 15px;">${mark.subject} (${mark.subject_code})</h4>
+                    <div class="chart-container">
+                        <canvas id="chart-${index}"></canvas>
+                    </div>
+                `;
+                container.appendChild(chartDiv);
+                
+                const ctx = document.getElementById(`chart-${index}`);
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Mid (50)', 'Final (100)', 'Quiz (10)', 'Assignment (20)'],
+                        datasets: [{
+                            label: 'My Marks',
+                            data: [mark.mid, mark.final, mark.quiz, mark.assignment],
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)'
+                        }, {
+                            label: 'Class Average',
+                            data: [classAvg.mid, classAvg.final, classAvg.quiz, classAvg.assignment],
+                            backgroundColor: 'rgba(118, 75, 162, 0.8)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            });
+        }
+        
+        function loadAttendance() {
+            const container = document.getElementById('attendance-container');
+            if (dashboardData.attendance.length === 0) {
+                container.innerHTML = '<p>No attendance records available</p>';
+            } else {
+                container.innerHTML = dashboardData.attendance.map(a => {
+                    const fillClass = a.percentage >= 75 ? '' : a.percentage >= 50 ? 'warning' : 'danger';
+                    return `
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <strong>${a.subject}</strong>
+                                <span>${a.percentage}% (${a.present}/${a.total_classes})</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill ${fillClass}" style="width: ${a.percentage}%">${a.percentage}%</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function loadAlerts() {
+            const container = document.getElementById('alerts-container');
+            if (dashboardData.alerts.length === 0) {
+                container.innerHTML = '<p style="color: #28a745;">✅ No alerts! You are doing great!</p>';
+            } else {
+                container.innerHTML = dashboardData.alerts.map(alert => `
+                    <div class="alert alert-${alert.type === 'Critical' ? 'critical' : alert.type === 'Warning' ? 'warning' : 'info'}">
+                        <strong>${alert.type}:</strong> ${alert.message}
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login_test.html';
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboard, 30000);
+        
+        loadDashboard();
+    </script>
+</body>
+</html>

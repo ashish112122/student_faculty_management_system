@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Student Dashboard</h1>
+        <nav><a href="#" id="logout">Logout</a></nav>
+    </header>
+    <div class="container">
+        <aside>
+            <ul>
+                <li><a href="#marks">Marks</a></li>
+                <li><a href="#attendance">Attendance</a></li>
+                <li><a href="#alerts">Alerts</a></li>
+                <li><a href="#feedback">Feedback</a></li>
+            </ul>
+        </aside>
+        <main>
+            <div id="overview">
+                <p>Semester: <span id="semester"></span></p>
+                <p>CGPA: <span id="cgpa"></span></p>
+                <p>Total Credits: <span id="credits"></span></p>
+            </div>
+            <div id="marks">
+                <h3>Marks</h3>
+                <table id="marks-table"></table>
+                <canvas id="marks-chart"></canvas>
+            </div>
+            <div id="attendance">
+                <h3>Attendance</h3>
+                <div id="attendance-bars"></div>
+            </div>
+            <div id="alerts">
+                <h3>Alerts</h3>
+                <ul id="alerts-list"></ul>
+            </div>
+            <div id="feedback">
+                <h3>Feedback</h3>
+                <form id="feedback-form">
+                    <textarea id="message" placeholder="Message"></textarea>
+                    <button type="submit">Send</button>
+                </form>
+                <ul id="feedback-list"></ul>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="static/app.js"></script>
+</body>
+</html>

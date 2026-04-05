@@ -1,0 +1,13 @@
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+header { background: #333; color: white; padding: 1rem; display: flex; justify-content: space-between; }
+.container { display: flex; }
+aside { width: 200px; background: #f4f4f4; padding: 1rem; }
+main { flex: 1; padding: 1rem; }
+footer { background: #333; color: white; text-align: center; padding: 1rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #ddd; padding: 8px; }
+.login-container, .register-container { max-width: 400px; margin: 2rem auto; padding: 2rem; border: 1px solid #ddd; }
+input, select, button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.5rem; }
+button { background: #333; color: white; border: none; cursor: pointer; }
+.progress-bar { background: #ddd; height: 20px; margin: 0.5rem 0; }
+.progress-fill { background: green; height: 100%; }
