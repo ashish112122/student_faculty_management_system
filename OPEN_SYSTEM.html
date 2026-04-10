@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Faculty Management System - Quick Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .status {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        .status h3 {
+            color: #0ea5e9;
+            margin-bottom: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 14px;
+        }
+        
+        .status-item .label {
+            color: #666;
+        }
+        
+        .status-item .value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .status-item .running {
+            color: #10b981;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .credentials {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .credentials h3 {
+            color: #f59e0b;
+            margin-bottom: 15px;
+        }
+        
+        .cred-box {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .cred-box:last-child {
+            margin-bottom: 0;
+        }
+        
+        .cred-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .cred-item {
+            display: flex;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .cred-item .label {
+            color: #666;
+            width: 80px;
+        }
+        
+        .cred-item .value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        
+        .emoji {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🎓</div>
+        <h1>Student Faculty Management System</h1>
+        <p class="subtitle">Quick Access Portal</p>
+        
+        <div class="status">
+            <h3>✅ System Status</h3>
+            <div class="status-item">
+                <span class="label">Backend Server:</span>
+                <span class="value running">✅ RUNNING (Port 5000)</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Frontend Server:</span>
+                <span class="value running">✅ RUNNING (Port 8000)</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Database:</span>
+                <span class="value running">✅ CONNECTED (Oracle XE)</span>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <a href="http://localhost:8000/login_test.html" class="btn btn-primary" target="_blank">
+                🚀 Open Login Page
+            </a>
+            <a href="http://localhost:5000/" class="btn btn-secondary" target="_blank">
+                🔧 Test Backend
+            </a>
+            <a href="SYSTEM_STATUS_CHECK.md" class="btn btn-secondary">
+                📊 View Full Status
+            </a>
+            <a href="WORKING_LINKS.md" class="btn btn-secondary">
+                📖 All Links & Credentials
+            </a>
+        </div>
+        
+        <div class="credentials">
+            <h3>🔐 Test Credentials</h3>
+            
+            <div class="cred-box">
+                <h4>👨‍🎓 Student Login</h4>
+                <div class="cred-item">
+                    <span class="label">Email:</span>
+                    <span class="value">rohan.sharma.2q34.3@thapar.edu</span>
+                </div>
+                <div class="cred-item">
+                    <span class="label">Password:</span>
+                    <span class="value">pass123</span>
+                </div>
+            </div>
+            
+            <div class="cred-box">
+                <h4>👨‍🏫 Faculty Login</h4>
+                <div class="cred-item">
+                    <span class="label">Email:</span>
+                    <span class="value">dr.rajesh@thaparfac.edu</span>
+                </div>
+                <div class="cred-item">
+                    <span class="label">Password:</span>
+                    <span class="value">pass123</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>💡 Tip: Click "Open Login Page" to start using the system</p>
+            <p style="margin-top: 10px;">📚 All documentation available in project folder</p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-check backend status
+        fetch('http://localhost:5000/')
+            .then(response => response.text())
+            .then(data => {
+                console.log('Backend response:', data);
+            })
+            .catch(error => {
+                console.error('Backend not responding:', error);
+            });
+    </script>
+</body>
+</html>

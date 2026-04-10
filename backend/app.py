@@ -1,13 +1,25 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import oracledb
 import jwt
 import datetime
+import os
 from functools import wraps
+from werkzeug.utils import secure_filename
 from config import Config
 
 app = Flask(__name__)
 CORS(app)
+app.config['SECRET_KEY'] = Config.SECRET_KEY
+app.config['UPLOAD_FOLDER'] = 'uploads/feedback_attachments'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'}
+
+# Create upload folder if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 app.config['SECRET_KEY'] = Config.SECRET_KEY
 
 DB_CONFIG = {
@@ -339,7 +351,8 @@ def get_student_feedback_thread(faculty_id, subject_id):
         student_id = result[0]
         
         cursor.execute("""
-            SELECT feedback_id, sender_role, message, is_read, created_at
+            SELECT feedback_id, sender_role, message, is_read, created_at, 
+                   attachment_path, attachment_name, attachment_type
             FROM feedback
             WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
             ORDER BY created_at ASC
@@ -347,12 +360,17 @@ def get_student_feedback_thread(faculty_id, subject_id):
         
         messages = []
         for row in cursor.fetchall():
+            # Convert CLOB to string if needed
+            message_text = row[2].read() if hasattr(row[2], 'read') else str(row[2])
             messages.append({
                 'feedback_id': row[0],
                 'sender_role': row[1],
-                'message': row[2],
+                'message': message_text,
                 'is_read': row[3],
-                'created_at': row[4].strftime('%Y-%m-%d %H:%M')
+                'created_at': row[4].strftime('%Y-%m-%d %H:%M'),
+                'attachment_name': row[6],
+                'attachment_type': row[7],
+                'has_attachment': row[6] is not None
             })
         
         cursor.execute("""
@@ -373,10 +391,37 @@ def send_student_feedback():
     cursor = conn.cursor()
     
     try:
-        data = request.get_json()
-        faculty_id = data.get('faculty_id')
-        subject_id = data.get('subject_id')
-        message = data.get('message')
+        # Check if request has file
+        if 'attachment' in request.files:
+            # Handle multipart/form-data
+            file = request.files['attachment']
+            faculty_id = request.form.get('faculty_id')
+            subject_id = request.form.get('subject_id')
+            message = request.form.get('message', '')
+            
+            attachment_path = None
+            attachment_name = None
+            attachment_type = None
+            
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"{timestamp}_{filename}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                file.save(filepath)
+                
+                attachment_path = filepath
+                attachment_name = filename
+                attachment_type = filename.rsplit('.', 1)[1].lower()
+        else:
+            # Handle JSON data (no attachment)
+            data = request.get_json()
+            faculty_id = data.get('faculty_id')
+            subject_id = data.get('subject_id')
+            message = data.get('message')
+            attachment_path = None
+            attachment_name = None
+            attachment_type = None
         
         cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
         result = cursor.fetchone()
@@ -386,13 +431,18 @@ def send_student_feedback():
         student_id = result[0]
         
         cursor.execute("""
-            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read)
-            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'student', :message, 0)
+            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read, 
+                                 attachment_path, attachment_name, attachment_type)
+            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'student', :message, 0,
+                   :attachment_path, :attachment_name, :attachment_type)
         """, {
             'student_id': student_id,
             'faculty_id': faculty_id,
             'subject_id': subject_id,
-            'message': message
+            'message': message,
+            'attachment_path': attachment_path,
+            'attachment_name': attachment_name,
+            'attachment_type': attachment_type
         })
         
         conn.commit()
@@ -660,7 +710,8 @@ def get_faculty_feedback_thread(student_id, subject_id):
         faculty_id = result[0]
         
         cursor.execute("""
-            SELECT feedback_id, sender_role, message, is_read, created_at
+            SELECT feedback_id, sender_role, message, is_read, created_at, 
+                   attachment_path, attachment_name, attachment_type
             FROM feedback
             WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
             ORDER BY created_at ASC
@@ -668,12 +719,17 @@ def get_faculty_feedback_thread(student_id, subject_id):
         
         messages = []
         for row in cursor.fetchall():
+            # Convert CLOB to string if needed
+            message_text = row[2].read() if hasattr(row[2], 'read') else str(row[2])
             messages.append({
                 'feedback_id': row[0],
                 'sender_role': row[1],
-                'message': row[2],
+                'message': message_text,
                 'is_read': row[3],
-                'created_at': row[4].strftime('%Y-%m-%d %H:%M')
+                'created_at': row[4].strftime('%Y-%m-%d %H:%M'),
+                'attachment_name': row[6],
+                'attachment_type': row[7],
+                'has_attachment': row[6] is not None
             })
         
         cursor.execute("""
@@ -694,10 +750,37 @@ def send_faculty_feedback():
     cursor = conn.cursor()
     
     try:
-        data = request.get_json()
-        student_id = data.get('student_id')
-        subject_id = data.get('subject_id')
-        message = data.get('message')
+        # Check if request has file
+        if 'attachment' in request.files:
+            # Handle multipart/form-data
+            file = request.files['attachment']
+            student_id = request.form.get('student_id')
+            subject_id = request.form.get('subject_id')
+            message = request.form.get('message', '')
+            
+            attachment_path = None
+            attachment_name = None
+            attachment_type = None
+            
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"{timestamp}_{filename}"
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                file.save(filepath)
+                
+                attachment_path = filepath
+                attachment_name = filename
+                attachment_type = filename.rsplit('.', 1)[1].lower()
+        else:
+            # Handle JSON data (no attachment)
+            data = request.get_json()
+            student_id = data.get('student_id')
+            subject_id = data.get('subject_id')
+            message = data.get('message')
+            attachment_path = None
+            attachment_name = None
+            attachment_type = None
         
         cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
         result = cursor.fetchone()
@@ -707,13 +790,18 @@ def send_faculty_feedback():
         faculty_id = result[0]
         
         cursor.execute("""
-            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read)
-            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'faculty', :message, 0)
+            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read,
+                                 attachment_path, attachment_name, attachment_type)
+            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'faculty', :message, 0,
+                   :attachment_path, :attachment_name, :attachment_type)
         """, {
             'student_id': student_id,
             'faculty_id': faculty_id,
             'subject_id': subject_id,
-            'message': message
+            'message': message,
+            'attachment_path': attachment_path,
+            'attachment_name': attachment_name,
+            'attachment_type': attachment_type
         })
         
         conn.commit()
@@ -939,6 +1027,40 @@ def update_attendance_alerts(cursor, conn, subject_id, class_name):
         conn.commit()
     except Exception as e:
         print(f"Error updating alerts: {str(e)}")
+
+# Download attachment endpoint
+@app.route('/api/feedback/attachment/<int:feedback_id>', methods=['GET'])
+@token_required
+def download_attachment(feedback_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            SELECT attachment_path, attachment_name 
+            FROM feedback 
+            WHERE feedback_id = :feedback_id
+        """, {'feedback_id': feedback_id})
+        
+        result = cursor.fetchone()
+        if not result or not result[0]:
+            return jsonify({'message': 'Attachment not found'}), 404
+        
+        attachment_path, attachment_name = result
+        
+        if os.path.exists(attachment_path):
+            directory = os.path.dirname(attachment_path)
+            filename = os.path.basename(attachment_path)
+            return send_from_directory(directory, filename, as_attachment=True, download_name=attachment_name)
+        else:
+            return jsonify({'message': 'File not found on server'}), 404
+            
+    except Exception as e:
+        print(f"Error downloading attachment: {str(e)}")
+        return jsonify({'message': 'Error downloading file'}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

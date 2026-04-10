@@ -46,29 +46,49 @@
         table tr:hover { background: #F5F5F5; }
         input[type="number"] { width: 70px; padding: 5px; border: 1px solid #EAEAEA; border-radius: 4px; }
         
-        /* Feedback */
-        .feedback-list { margin-top: 20px; }
-        .feedback-thread { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; border: 1px solid #EAEAEA; }
-        .feedback-thread:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.1); background: #F5F5F5; }
-        .feedback-thread.unread { border-left: 4px solid #dc3545; }
-        .feedback-thread h4 { color: #2C2C2C; margin-bottom: 5px; }
-        .feedback-thread p { color: #4A5568; font-size: 14px; }
-        .unread-badge { background: #dc3545; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 10px; }
+        /* Feedback - ChatGPT Style */
+        .feedback-chatgpt-container { display: flex; height: calc(100vh - 140px); background: white; border-radius: 10px; overflow: hidden; border: 1px solid #EAEAEA; }
         
-        /* Chat */
-        .chat-container { background: white; border-radius: 10px; padding: 20px; height: 500px; display: flex; flex-direction: column; border: 1px solid #EAEAEA; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 10px; background: #F5F5F5; border-radius: 8px; margin-bottom: 15px; }
-        .chat-message { margin-bottom: 15px; padding: 10px; border-radius: 8px; max-width: 70%; }
+        /* Chat Sidebar */
+        .chat-sidebar { width: 280px; background: #2C2C2C; color: white; display: flex; flex-direction: column; border-right: 1px solid #1a1a1a; }
+        .chat-sidebar-header { padding: 15px; background: #1a1a1a; }
+        .search-chat-input { width: 100%; padding: 10px; border: 1px solid #3a3a3a; border-radius: 8px; background: #3a3a3a; color: white; }
+        .search-chat-input::placeholder { color: #999; }
+        .chat-threads-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .chat-thread-item { padding: 12px; margin-bottom: 8px; background: #3a3a3a; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .chat-thread-item:hover { background: #4a4a4a; }
+        .chat-thread-item.active { background: #3A7BD5; }
+        .chat-thread-item h4 { font-size: 14px; margin-bottom: 5px; color: white; }
+        .chat-thread-item p { font-size: 12px; color: #ccc; }
+        .chat-thread-item .unread-badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
+        
+        /* Chat Main Area */
+        .chat-main-area { flex: 1; display: flex; flex-direction: column; background: #F5F5F5; }
+        .chat-header { padding: 20px; background: white; border-bottom: 1px solid #EAEAEA; }
+        .chat-header h2 { color: #2C2C2C; font-size: 20px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
+        .chat-message { margin-bottom: 20px; padding: 12px 16px; border-radius: 12px; max-width: 70%; }
         .chat-message.faculty { background: #3A7BD5; color: white; margin-left: auto; }
-        .chat-message.student { background: #EAEAEA; color: #2C2C2C; }
+        .chat-message.student { background: white; color: #2C2C2C; border: 1px solid #EAEAEA; }
         .chat-message .sender { font-weight: bold; margin-bottom: 5px; font-size: 12px; }
-        .chat-message .text { margin-bottom: 5px; }
+        .chat-message .text { margin-bottom: 5px; line-height: 1.5; }
         .chat-message .time { font-size: 11px; opacity: 0.7; }
         .chat-message.unread { border: 2px solid #dc3545; }
-        .chat-input { display: flex; gap: 10px; }
-        .chat-input input { flex: 1; padding: 10px; border: 1px solid #EAEAEA; border-radius: 5px; }
-        .chat-input button { padding: 10px 20px; background: #3A7BD5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .chat-input-container { padding: 20px; background: white; border-top: 1px solid #EAEAEA; }
+        .chat-input { display: flex; gap: 10px; align-items: center; }
+        .chat-input input[type="text"] { flex: 1; padding: 12px; border: 1px solid #EAEAEA; border-radius: 8px; font-size: 14px; }
+        .chat-input input[type="file"] { display: none; }
+        .chat-input .attach-btn { padding: 10px; background: #4A5568; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; }
+        .chat-input .attach-btn:hover { background: #3a4555; }
+        .chat-input button { padding: 12px 24px; background: #3A7BD5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .chat-input button:hover { background: #2d5fa8; }
+        .attachment-preview { margin: 10px 0; padding: 10px; background: #f0f7ff; border-radius: 5px; display: none; }
+        .attachment-preview.show { display: block; }
+        .attachment-link { color: #3A7BD5; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        .attachment-link:hover { text-decoration: underline; }
+        .attachment-icon { font-size: 16px; }
+        .empty-chat-state { text-align: center; padding: 40px; color: #4A5568; }
+        .empty-chat-state h3 { margin-bottom: 10px; }
         
         /* Buttons */
         .btn { padding: 10px 20px; background: #3A7BD5; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
@@ -173,12 +193,17 @@
                 <div style="margin: 15px 0;">
                     <label for="attendance-date" style="margin-right: 10px; font-weight: bold;">Select Date:</label>
                     <input type="date" id="attendance-date" min="2026-01-01" max="2026-05-01" style="padding: 8px; border: 1px solid #EAEAEA; border-radius: 5px;">
-                    <button class="btn" onclick="loadAttendanceForDate()" style="margin-left: 10px;">Load Attendance</button>
+                    <button class="btn" onclick="loadAttendanceForDate()" style="margin-left: 10px;">📋 Load Attendance</button>
                 </div>
                 <button class="btn btn-back" onclick="showAttendance()">← Back to Batches</button>
             </div>
             <div id="attendance-instructions" style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3A7BD5;">
-                <strong>Instructions:</strong> Select a date above, then mark Present (P) or Absent (A) for each student. Click "Save Attendance" when done.
+                <strong>Instructions:</strong> 
+                <ol style="margin: 10px 0 0 20px;">
+                    <li>Select a date above and click "Load Attendance"</li>
+                    <li>Mark Present (P) or Absent (A) for each student</li>
+                    <li>Click "Save Attendance" button below when done</li>
+                </ol>
             </div>
             <table id="attendance-table">
                 <thead>
@@ -191,30 +216,48 @@
                 <tbody id="attendance-entry-tbody"></tbody>
             </table>
             <div style="margin-top: 20px; text-align: center;">
-                <button class="btn btn-success" onclick="saveAllAttendance()" style="font-size: 16px; padding: 12px 30px;">Save Attendance for Selected Date</button>
+                <button class="btn btn-success" onclick="saveAllAttendance()" style="font-size: 16px; padding: 12px 30px;">💾 Save Attendance for Selected Date</button>
             </div>
         </div>
         
-        <!-- Feedback View -->
+        <!-- Feedback View - ChatGPT Style -->
         <div id="feedback-view" class="hidden">
             <div class="header">
                 <h1>Feedback Threads</h1>
                 <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
             </div>
-            <div class="feedback-list" id="feedback-threads"></div>
-        </div>
-        
-        <!-- Feedback Chat -->
-        <div id="feedback-chat-view" class="hidden">
-            <div class="header">
-                <h1 id="chat-title">Chat</h1>
-                <button class="btn btn-back" onclick="showFeedback()">← Back to Threads</button>
-            </div>
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages"></div>
-                <div class="chat-input">
-                    <input type="text" id="chat-input" placeholder="Type your reply..." onkeypress="if(event.key==='Enter') sendMessage()">
-                    <button onclick="sendMessage()">Send</button>
+            <div class="feedback-chatgpt-container">
+                <!-- Chat Sidebar -->
+                <div class="chat-sidebar">
+                    <div class="chat-sidebar-header">
+                        <input type="text" class="search-chat-input" placeholder="Search chats..." oninput="searchChats(this.value)">
+                    </div>
+                    <div class="chat-threads-list" id="chat-threads-list"></div>
+                </div>
+                
+                <!-- Chat Main Area -->
+                <div class="chat-main-area">
+                    <div class="chat-header">
+                        <h2 id="chat-title">Select a chat to view conversation</h2>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="empty-chat-state">
+                            <h3>💬 Student Feedback</h3>
+                            <p>Select a student chat from the sidebar to view and respond to messages</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <div class="attachment-preview" id="attachment-preview">
+                            <span id="attachment-name"></span>
+                            <button onclick="removeAttachment()" style="margin-left: 10px; padding: 2px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Remove</button>
+                        </div>
+                        <div class="chat-input">
+                            <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+                            <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach file">📎</button>
+                            <input type="text" id="chat-input" placeholder="Type your reply..." onkeypress="if(event.key==='Enter') sendMessage()">
+                            <button onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -520,40 +563,77 @@
             }
         }
         
+        let allThreads = [];
+        let activeThreadId = null;
+        
         async function loadFeedbackThreads() {
             try {
                 const response = await fetch(`${API_URL}/faculty/feedback/threads`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const threads = await response.json();
+                allThreads = await response.json();
                 
-                const container = document.getElementById('feedback-threads');
-                if (threads.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; padding:20px;">No feedback threads</p>';
-                } else {
-                    container.innerHTML = threads.map(t => `
-                        <div class="feedback-thread ${t.unread_count > 0 ? 'unread' : ''}" onclick="openChat(${t.student_id}, ${t.subject_id}, '${t.student_name}', '${t.subject_name}')">
-                            <h4>${t.student_name} (${t.class_name})
-                                ${t.unread_count > 0 ? `<span class="unread-badge">${t.unread_count} new</span>` : ''}
-                            </h4>
-                            <p>${t.subject_name}</p>
-                        </div>
-                    `).join('');
-                }
+                renderThreadsList(allThreads);
             } catch (error) {
                 console.error('Error loading threads:', error);
             }
         }
         
+        function renderThreadsList(threads) {
+            const container = document.getElementById('chat-threads-list');
+            if (threads.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No feedback threads</p>';
+            } else {
+                container.innerHTML = threads.map(t => {
+                    const threadId = `${t.student_id}_${t.subject_id}`;
+                    const chatName = `Chat with ${t.student_name} - ${t.subject_name}`;
+                    return `
+                        <div class="chat-thread-item ${activeThreadId === threadId ? 'active' : ''}" onclick="openChat(${t.student_id}, ${t.subject_id}, '${t.student_name}', '${t.subject_name}')">
+                            <h4>${chatName}${t.unread_count > 0 ? `<span class="unread-badge">${t.unread_count}</span>` : ''}</h4>
+                            <p>${t.class_name}</p>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function searchChats(query) {
+            const filtered = allThreads.filter(t => {
+                const searchText = `${t.student_name} ${t.subject_name} ${t.class_name}`.toLowerCase();
+                return searchText.includes(query.toLowerCase());
+            });
+            renderThreadsList(filtered);
+        }
+        
         async function openChat(studentId, subjectId, studentName, subjectName) {
             currentStudent = {id: studentId, name: studentName};
             currentSubject = {id: subjectId, name: subjectName};
+            activeThreadId = `${studentId}_${subjectId}`;
             
-            hideAllViews();
-            document.getElementById('feedback-chat-view').classList.remove('hidden');
+            // Update active state in sidebar
+            document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.chat-thread-item')?.classList.add('active');
+            
             document.getElementById('chat-title').textContent = `Chat with ${studentName} - ${subjectName}`;
             
             loadChatMessages();
+        }
+        
+        let selectedFile = null;
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('attachment-preview').classList.add('show');
+                document.getElementById('attachment-name').textContent = `📎 ${file.name}`;
+            }
+        }
+        
+        function removeAttachment() {
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('attachment-preview').classList.remove('show');
         }
         
         async function loadChatMessages() {
@@ -568,6 +648,11 @@
                     <div class="chat-message ${m.sender_role} ${m.sender_role === 'student' && !m.is_read ? 'unread' : ''}">
                         <div class="sender">${m.sender_role === 'faculty' ? 'You' : currentStudent.name}</div>
                         <div class="text">${m.message}</div>
+                        ${m.has_attachment ? `<div class="attachment-link">
+                            <a href="${API_URL}/feedback/attachment/${m.feedback_id}" target="_blank" class="attachment-link">
+                                <span class="attachment-icon">📎</span> ${m.attachment_name}
+                            </a>
+                        </div>` : ''}
                         <div class="time">${m.created_at}</div>
                     </div>
                 `).join('');
@@ -582,21 +667,41 @@
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             
-            if (!message) return;
+            if (!message && !selectedFile) return;
             
             try {
-                await fetch(`${API_URL}/faculty/feedback/send`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        student_id: currentStudent.id,
-                        subject_id: currentSubject.id,
-                        message: message
-                    })
-                });
+                if (selectedFile) {
+                    // Send with attachment
+                    const formData = new FormData();
+                    formData.append('student_id', currentStudent.id);
+                    formData.append('subject_id', currentSubject.id);
+                    formData.append('message', message);
+                    formData.append('attachment', selectedFile);
+                    
+                    await fetch(`${API_URL}/faculty/feedback/send`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+                    
+                    removeAttachment();
+                } else {
+                    // Send without attachment
+                    await fetch(`${API_URL}/faculty/feedback/send`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            student_id: currentStudent.id,
+                            subject_id: currentSubject.id,
+                            message: message
+                        })
+                    });
+                }
                 
                 input.value = '';
                 loadChatMessages();

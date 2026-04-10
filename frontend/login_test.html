@@ -49,6 +49,7 @@
             try {
                 const response = await fetch('http://localhost:5000/api/login', {
                     method: 'POST',
+                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json'
                     },

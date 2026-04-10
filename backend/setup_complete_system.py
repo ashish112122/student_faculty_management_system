@@ -374,19 +374,25 @@ def setup_system():
         HAVING (SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) / COUNT(*)) < 0.75
     """)
     
-    for student_id, subject_id, subject_name, total, present in cursor.fetchall():
+    alert_results = cursor.fetchall()
+    for idx, (student_id, subject_id, subject_name, total, present) in enumerate(alert_results):
         percentage = round((present / total) * 100, 2)
         alert_type = 'Critical' if percentage < 50 else 'Warning'
         message = f"Low attendance in {subject_name}: {percentage}%"
         
+        # Vary the alert creation date (spread over last 30 days)
+        days_ago = idx % 30
+        alert_date = datetime(2026, 4, 5) - timedelta(days=days_ago)
+        
         cursor.execute("""
-            INSERT INTO alerts (alert_id, student_id, subject_id, alert_type, message, is_read)
-            VALUES (alerts_seq.NEXTVAL, :student_id, :subject_id, :alert_type, :message, 0)
+            INSERT INTO alerts (alert_id, student_id, subject_id, alert_type, message, is_read, created_at)
+            VALUES (alerts_seq.NEXTVAL, :student_id, :subject_id, :alert_type, :message, 0, :created_at)
         """, {
             'student_id': student_id,
             'subject_id': subject_id,
             'alert_type': alert_type,
-            'message': message
+            'message': message,
+            'created_at': alert_date
         })
         alert_count += 1
     
