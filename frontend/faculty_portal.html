@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Faculty Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #F5F5F5; }
@@ -16,11 +17,8 @@
         .sidebar nav a:hover { background: #3A7BD5; }
         
         /* Menu Button */
-        .menu-btn { position: fixed; top: 20px; left: 20px; width: 40px; height: 30px; cursor: pointer; z-index: 1001; }
-        .menu-btn div { width: 100%; height: 4px; background: #2C2C2C; margin: 6px 0; transition: 0.3s; }
-        .menu-btn.active div:nth-child(1) { transform: rotate(-45deg) translate(-6px, 6px); }
-        .menu-btn.active div:nth-child(2) { opacity: 0; }
-        .menu-btn.active div:nth-child(3) { transform: rotate(45deg) translate(-6px, -6px); }
+        .menu-btn { position: fixed; top: 20px; left: 20px; width: 40px; height: 40px; cursor: pointer; z-index: 1001; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #2C2C2C; transition: 0.3s; }
+        .menu-btn:hover { color: #3A7BD5; }
         
         /* Main Content */
         .container { margin-left: 80px; padding: 20px; }
@@ -98,6 +96,10 @@
         .btn-success { background: #2AA198; }
         .btn-success:hover { background: #238b83; }
         
+        /* Close Button for Chat */
+        .chat-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; color: #4A5568; cursor: pointer; z-index: 10; }
+        .chat-close-btn:hover { color: #dc3545; }
+        
         /* Hidden */
         .hidden { display: none; }
         
@@ -115,16 +117,14 @@
 <body>
     <!-- Menu Button -->
     <div class="menu-btn" onclick="toggleMenu()">
-        <div></div>
-        <div></div>
-        <div></div>
+        <i class="fa-solid fa-bars" id="menu-icon-bars"></i>
+        <i class="fa-solid fa-xmark" id="menu-icon-close" style="display: none;"></i>
     </div>
     
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <h2>👨‍🏫 Faculty Portal</h2>
+        <h2>Faculty Portal</h2>
         <nav>
-            <a href="#" onclick="showDashboard()">Dashboard</a>
             <a href="#" onclick="logout()">Logout</a>
         </nav>
     </div>
@@ -142,16 +142,17 @@
             
             <div class="dashboard-grid">
                 <div class="dashboard-box" onclick="showMarks()">
-                    <h3>📝</h3>
+                    <h3><i class="fa-solid fa-marker"></i></h3>
                     <p>Marks</p>
                 </div>
                 <div class="dashboard-box" onclick="showAttendance()">
-                    <h3>📅</h3>
+                    <h3><i class="fa-solid fa-clipboard-user"></i></h3>
                     <p>Attendance</p>
                 </div>
-                <div class="dashboard-box" onclick="showFeedback()">
-                    <h3>💬</h3>
+                <div class="dashboard-box" onclick="showFeedback()" style="position: relative;">
+                    <h3><i class="fa-solid fa-comment"></i></h3>
                     <p>Feedback</p>
+                    <span id="feedback-notification-badge" style="display: none; position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;"></span>
                 </div>
             </div>
         </div>
@@ -160,7 +161,7 @@
         <div id="marks-view" class="hidden">
             <div class="header">
                 <h1>Marks - Select Batch</h1>
-                <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
+                <button class="btn btn-back" onclick="showDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
             </div>
             <div class="batch-grid" id="marks-batches"></div>
         </div>
@@ -169,7 +170,7 @@
         <div id="marks-entry-view" class="hidden">
             <div class="header">
                 <h1 id="marks-entry-title">Marks Entry</h1>
-                <button class="btn btn-back" onclick="showMarks()">← Back to Batches</button>
+                <button class="btn btn-back" onclick="showMarks()"><i class="fa-solid fa-arrow-left"></i> Back to Batches</button>
             </div>
             <table>
                 <thead>
@@ -191,7 +192,7 @@
         <div id="attendance-view" class="hidden">
             <div class="header">
                 <h1>Attendance - Select Batch</h1>
-                <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
+                <button class="btn btn-back" onclick="showDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
             </div>
             <div class="batch-grid" id="attendance-batches"></div>
         </div>
@@ -203,9 +204,9 @@
                 <div style="margin: 15px 0;">
                     <label for="attendance-date" style="margin-right: 10px; font-weight: bold;">Select Date:</label>
                     <input type="date" id="attendance-date" min="2026-01-01" max="2026-05-01" style="padding: 8px; border: 1px solid #EAEAEA; border-radius: 5px;">
-                    <button class="btn" onclick="loadAttendanceForDate()" style="margin-left: 10px;">📋 Load Attendance</button>
+                    <button class="btn" onclick="loadAttendanceForDate()" style="margin-left: 10px;"><i class="fa-solid fa-clipboard-user"></i> Load Attendance</button>
                 </div>
-                <button class="btn btn-back" onclick="showAttendance()">← Back to Batches</button>
+                <button class="btn btn-back" onclick="showAttendance()"><i class="fa-solid fa-arrow-left"></i> Back to Batches</button>
             </div>
             <div id="attendance-instructions" style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3A7BD5;">
                 <strong>Instructions:</strong> 
@@ -226,7 +227,7 @@
                 <tbody id="attendance-entry-tbody"></tbody>
             </table>
             <div style="margin-top: 20px; text-align: center;">
-                <button class="btn btn-success" onclick="saveAllAttendance()" style="font-size: 16px; padding: 12px 30px;">💾 Save Attendance for Selected Date</button>
+                <button class="btn btn-success" onclick="saveAllAttendance()" style="font-size: 16px; padding: 12px 30px;"><i class="fa-solid fa-floppy-disk"></i> Save Attendance for Selected Date</button>
             </div>
         </div>
         
@@ -234,7 +235,7 @@
         <div id="feedback-view" class="hidden">
             <div class="header">
                 <h1>Feedback Threads</h1>
-                <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
+                <button class="btn btn-back" onclick="showDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
             </div>
             <div class="feedback-chatgpt-container">
                 <!-- Left Panel: Batch and Student Selection -->
@@ -252,14 +253,21 @@
                 </div>
                 
                 <!-- Chat Main Area -->
-                <div class="chat-main-area">
+                <div class="chat-main-area" style="position: relative;">
+                    <button class="chat-close-btn" onclick="closeChatView()" style="display: none;" id="chat-close-button">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <div class="chat-header">
                         <h2 id="chat-title">Select a student to view conversation</h2>
                     </div>
                     <div class="chat-messages" id="chat-messages">
-                        <div class="empty-chat-state">
-                            <h3>💬 Student Feedback</h3>
+                        <div class="empty-chat-state" id="empty-state">
+                            <h3><i class="fa-solid fa-comment"></i> Student Feedback</h3>
                             <p>Select a batch and student from the left panel to view and respond to messages</p>
+                        </div>
+                        <div id="notification-panel" style="display: none; padding: 20px;">
+                            <h3 style="color: #2C2C2C; margin-bottom: 20px; text-align: center;"><i class="fa-solid fa-bell"></i> New Messages</h3>
+                            <div id="notification-list"></div>
                         </div>
                     </div>
                     <div class="chat-input-container">
@@ -283,11 +291,30 @@
     
     <script>
         const API_URL = 'http://localhost:5000/api';
-        const token = localStorage.getItem('token');
         
-        if (!token) {
-            window.location.href = 'login_test.html';
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+            
+            if (!token || role !== 'faculty') {
+                // Only redirect if truly not authenticated
+                if (!token) {
+                    window.location.href = 'login_test.html';
+                }
+            }
+            return token;
         }
+        
+        const token = checkAuth();
+        
+        // Prevent back button logout
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page loaded from cache, verify token still valid
+                checkAuth();
+            }
+        });
         
         let facultyData = null;
         let currentSubject = null;
@@ -302,9 +329,19 @@
         
         function toggleMenu() {
             const sidebar = document.getElementById('sidebar');
-            const menuBtn = document.querySelector('.menu-btn');
+            const barsIcon = document.getElementById('menu-icon-bars');
+            const closeIcon = document.getElementById('menu-icon-close');
+            
             sidebar.classList.toggle('active');
-            menuBtn.classList.toggle('active');
+            
+            // Toggle icons
+            if (sidebar.classList.contains('active')) {
+                barsIcon.style.display = 'none';
+                closeIcon.style.display = 'block';
+            } else {
+                barsIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+            }
         }
         
         function hideAllViews() {
@@ -314,24 +351,29 @@
         function showDashboard() {
             hideAllViews();
             document.getElementById('dashboard-view').classList.remove('hidden');
+            saveViewState();
         }
         
         function showMarks() {
             hideAllViews();
             document.getElementById('marks-view').classList.remove('hidden');
             loadMarksBatches();
+            saveViewState();
         }
         
         function showAttendance() {
             hideAllViews();
             document.getElementById('attendance-view').classList.remove('hidden');
             loadAttendanceBatches();
+            saveViewState();
         }
         
         function showFeedback() {
             hideAllViews();
             document.getElementById('feedback-view').classList.remove('hidden');
             loadBatchesForFeedback();
+            loadNewMessagesNotification();
+            saveViewState();
         }
         
         function loadBatchesForFeedback() {
@@ -378,14 +420,15 @@
             }
             
             const subject = facultyData.subjects[0];
+            const batch = document.getElementById('feedback-batch-selector').value;
             
             container.innerHTML = students.map(s => {
                 const threadId = `${s.student_id}_${subject.subject_id}`;
                 return `
                     <div class="chat-thread-item ${activeThreadId === threadId ? 'active' : ''}" 
-                         onclick="openFeedbackChat(${s.student_id}, ${subject.subject_id}, '${s.name}', '${subject.subject_name}', '${s.roll_number}', '${document.getElementById('feedback-batch-selector').value}')">
+                         onclick="openFeedbackChat(${s.student_id}, ${subject.subject_id}, '${s.name.replace(/'/g, "\\'")}', '${subject.subject_name.replace(/'/g, "\\'")}', '${s.roll_number}', '${batch}')">
                         <h4>${s.name}</h4>
-                        <p>Roll: ${s.roll_number} | Batch: ${document.getElementById('feedback-batch-selector').value}</p>
+                        <p>Roll: ${s.roll_number} | Batch: ${batch}</p>
                     </div>
                 `;
             }).join('');
@@ -426,9 +469,26 @@
                     const batches = [...new Set(facultyData.subjects.map(s => s.class_name))];
                     document.getElementById('batches-list').textContent = batches.join(', ');
                 }
+                
+                // Update notification badge
+                const unreadCount = facultyData.unread_feedback_count || 0;
+                const badge = document.getElementById('feedback-notification-badge');
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                alert('Error loading dashboard. Please login again.');
+                // Don't force logout on error - could be temporary network issue
+                if (error.message && error.message.includes('401')) {
+                    // Only logout on authentication error
+                    localStorage.clear();
+                    window.location.href = 'login_test.html';
+                } else {
+                    alert('Error loading dashboard. Please try refreshing the page.');
+                }
             }
         }
         
@@ -666,13 +726,47 @@
             currentSubject = {id: subjectId, name: subjectName};
             activeThreadId = `${studentId}_${subjectId}`;
             
+            // Save state to sessionStorage for refresh persistence
+            sessionStorage.setItem('activeFeedbackChat', JSON.stringify({
+                studentId, subjectId, studentName, subjectName, rollNumber, className
+            }));
+            
+            // Hide notification panel and empty state, show chat
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('notification-panel').style.display = 'none';
+            document.getElementById('chat-close-button').style.display = 'block';
+            
             // Update active state in sidebar
             document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
-            event.target.closest('.chat-thread-item')?.classList.add('active');
+            // Find and activate the correct item
+            const items = document.querySelectorAll('.chat-thread-item');
+            items.forEach(item => {
+                if (item.onclick && item.onclick.toString().includes(`${studentId}`)) {
+                    item.classList.add('active');
+                }
+            });
             
             document.getElementById('chat-title').textContent = `Chat with ${studentName} (Roll: ${rollNumber}) - ${subjectName}`;
             
             await loadChatMessages();
+        }
+        
+        function closeChatView() {
+            // Clear active chat state
+            currentStudent = null;
+            currentSubject = null;
+            activeThreadId = null;
+            sessionStorage.removeItem('activeFeedbackChat');
+            
+            // Hide close button and chat, show notification panel or empty state
+            document.getElementById('chat-close-button').style.display = 'none';
+            document.getElementById('chat-title').textContent = 'Select a student to view conversation';
+            
+            // Clear active state from sidebar
+            document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
+            
+            // Reload notification panel
+            loadNewMessagesNotification();
         }
         
         let selectedFile = null;
@@ -699,21 +793,34 @@
                 });
                 const messages = await response.json();
                 
+                console.log('Chat messages loaded:', messages); // Debug log
+                
                 const container = document.getElementById('chat-messages');
-                container.innerHTML = messages.map(m => `
-                    <div class="chat-message ${m.sender_role} ${m.sender_role === 'student' && !m.is_read ? 'unread' : ''}">
-                        <div class="sender">${m.sender_role === 'faculty' ? 'You' : currentStudent.name}</div>
-                        <div class="text">${m.message}</div>
-                        ${m.has_attachment ? `<div class="attachment-link">
-                            <a href="${API_URL}/feedback/attachment/${m.feedback_id}" target="_blank" class="attachment-link">
-                                <span class="attachment-icon">📎</span> ${m.attachment_name}
-                            </a>
-                        </div>` : ''}
-                        <div class="time">${m.created_at}</div>
-                    </div>
-                `).join('');
+                
+                if (messages.length === 0) {
+                    container.innerHTML = '<div class="empty-chat-state"><h3>No messages yet</h3><p>Start the conversation by sending a message below</p></div>';
+                } else {
+                    container.innerHTML = messages.map(m => `
+                        <div class="chat-message ${m.sender_role} ${m.sender_role === 'student' && !m.is_read ? 'unread' : ''}">
+                            <div class="sender">${m.sender_role === 'faculty' ? 'You' : currentStudent.name}</div>
+                            <div class="text">${m.message}</div>
+                            ${m.has_attachment ? `<div class="attachment-link">
+                                <a href="${API_URL}/feedback/attachment/${m.feedback_id}" target="_blank" class="attachment-link">
+                                    <span class="attachment-icon">📎</span> ${m.attachment_name}
+                                </a>
+                            </div>` : ''}
+                            <div class="time">${m.created_at}</div>
+                        </div>
+                    `).join('');
+                }
                 
                 container.scrollTop = container.scrollHeight;
+                
+                // Refresh dashboard to update badge count
+                await loadDashboard();
+                
+                // Refresh conversation list
+                await loadNewMessagesNotification();
             } catch (error) {
                 console.error('Error loading chat:', error);
             }
@@ -790,7 +897,134 @@
             window.location.href = 'login_test.html';
         }
         
+        async function loadNewMessagesNotification() {
+            try {
+                // Get ALL threads (not just unread)
+                const response = await fetch(`${API_URL}/faculty/feedback/threads`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const allThreads = await response.json();
+                
+                console.log('All feedback threads:', allThreads); // Debug log
+                
+                const emptyState = document.getElementById('empty-state');
+                const notificationPanel = document.getElementById('notification-panel');
+                const notificationList = document.getElementById('notification-list');
+                
+                if (allThreads.length > 0) {
+                    // Hide empty state, show all conversations
+                    emptyState.style.display = 'none';
+                    notificationPanel.style.display = 'block';
+                    
+                    // Update header to show all messages
+                    notificationPanel.querySelector('h3').innerHTML = '<i class="fa-solid fa-comment"></i> All Conversations';
+                    
+                    notificationList.innerHTML = allThreads.map(thread => {
+                        const hasUnread = thread.unread_count > 0;
+                        // Escape quotes in names for onclick handler
+                        const escapedStudentName = thread.student_name.replace(/'/g, "\\'");
+                        const escapedSubjectName = thread.subject_name.replace(/'/g, "\\'");
+                        const escapedClassName = thread.class_name.replace(/'/g, "\\'");
+                        
+                        return `
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${hasUnread ? '#dc3545' : '#3A7BD5'}; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;"
+                             onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'"
+                             onclick="openStudentFromNotification(${thread.student_id}, ${thread.subject_id}, '${escapedStudentName}', '${escapedSubjectName}', '', '${escapedClassName}')">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: bold; color: #2C2C2C; font-size: 16px;">
+                                        ${hasUnread ? '<i class="fa-solid fa-circle" style="color: #dc3545; font-size: 8px; margin-right: 8px;"></i>' : ''}${thread.student_name}
+                                    </div>
+                                    <div style="color: #6c757d; font-size: 13px; margin-top: 4px;">
+                                        ${thread.class_name} • ${thread.subject_name}
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    ${hasUnread ? `<div style="color: #dc3545; font-weight: bold; font-size: 14px;">${thread.unread_count} new</div>` : '<div style="color: #6c757d; font-size: 12px;">Read</div>'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                } else {
+                    // Show empty state
+                    emptyState.style.display = 'block';
+                    notificationPanel.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+        
+        function openStudentFromNotification(studentId, subjectId, studentName, subjectName, rollNumber, className) {
+            // Set the batch selector
+            document.getElementById('feedback-batch-selector').value = className;
+            
+            // Load students for that batch first
+            loadStudentsForFeedback().then(() => {
+                // Then open the chat
+                openFeedbackChat(studentId, subjectId, studentName, subjectName, rollNumber, className);
+            });
+        }
+        
+        // Restore chat state after refresh
+        function restoreFeedbackState() {
+            const savedChat = sessionStorage.getItem('activeFeedbackChat');
+            if (savedChat) {
+                try {
+                    const chatData = JSON.parse(savedChat);
+                    // Set batch selector
+                    document.getElementById('feedback-batch-selector').value = chatData.className;
+                    // Load students and open chat
+                    loadStudentsForFeedback().then(() => {
+                        openFeedbackChat(
+                            chatData.studentId,
+                            chatData.subjectId,
+                            chatData.studentName,
+                            chatData.subjectName,
+                            chatData.rollNumber,
+                            chatData.className
+                        );
+                    });
+                } catch (e) {
+                    console.error('Error restoring chat state:', e);
+                }
+            }
+        }
+        
+        // Save current view state
+        function saveViewState() {
+            const views = ['dashboard-view', 'marks-view', 'marks-entry-view', 'attendance-view', 'attendance-entry-view', 'feedback-view'];
+            for (let view of views) {
+                if (!document.getElementById(view).classList.contains('hidden')) {
+                    sessionStorage.setItem('activeView', view);
+                    break;
+                }
+            }
+        }
+        
+        // Restore view state after refresh
+        function restoreViewState() {
+            const activeView = sessionStorage.getItem('activeView');
+            if (activeView && activeView !== 'dashboard-view') {
+                // Restore the view
+                if (activeView === 'feedback-view') {
+                    showFeedback();
+                    // Restore chat if it was open
+                    setTimeout(() => restoreFeedbackState(), 500);
+                }
+                // Add other view restorations as needed
+            }
+        }
+        
         loadDashboard();
+        
+        // Restore view state after page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                restoreViewState();
+            }, 1000);
+        });
     </script>
 </body>
 </html>

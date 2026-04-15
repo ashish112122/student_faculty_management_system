@@ -53,40 +53,56 @@ def token_required(f):
 
 @app.route('/api/login', methods=['POST'])
 def login():
+    def debug_log(message):
+        print(message)
+        try:
+            with open(os.path.join('backend', 'login_debug.log'), 'a', encoding='utf-8') as log_file:
+                log_file.write(message + '\n')
+        except Exception:
+            pass
+
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True)
+        if data is None:
+            data = request.form.to_dict() if request.form else {}
+
+        debug_log(f'Login route called with data: {data}')
+
         email = data.get('email')
         password = data.get('password')
-        
+
         if not email or not password:
+            print('Login validation failed: missing email or password')
             return jsonify({'message': 'Email and password required'}), 400
-        
+
+        print('Connecting to database for login:', email)
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         try:
             cursor.execute("""
                 SELECT user_id, name, role, password
                 FROM users
                 WHERE email = :email
             """, {'email': email})
-            
+
             user = cursor.fetchone()
-            
             if not user:
                 return jsonify({'message': 'Invalid email or password'}), 401
-            
+
             user_id, name, role, stored_password = user
-            
             if password != stored_password:
                 return jsonify({'message': 'Invalid email or password'}), 401
-            
+
             token = jwt.encode({
                 'user_id': user_id,
                 'role': role,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             }, app.config['SECRET_KEY'], algorithm='HS256')
-            
+
+            if isinstance(token, bytes):
+                token = token.decode('utf-8')
+
             return jsonify({
                 'token': token,
                 'user_id': user_id,
@@ -97,8 +113,17 @@ def login():
         finally:
             cursor.close()
             conn.close()
+
     except Exception as e:
-        print(f"Login error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        app.logger.error('Login error: %s', e)
+        try:
+            with open(os.path.join('backend', 'login_debug.log'), 'a', encoding='utf-8') as log_file:
+                log_file.write('Login exception: ' + str(e) + '\n')
+                log_file.write(traceback.format_exc() + '\n')
+        except Exception:
+            pass
         return jsonify({'message': 'Server error occurred'}), 500
 
 @app.route('/api/logout', methods=['POST'])
@@ -535,12 +560,25 @@ def faculty_dashboard():
                 'class_name': row[3]
             })
         
+        # Get unread feedback count
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM feedback_messages fm
+            JOIN feedback_threads ft ON fm.thread_id = ft.thread_id
+            WHERE ft.faculty_id = :faculty_id 
+            AND fm.sender_role = 'student' 
+            AND fm.is_read = 0
+        """, {'faculty_id': faculty_id})
+        
+        unread_count = cursor.fetchone()[0]
+        
         return jsonify({
             'faculty_id': faculty_id,
             'name': name,
             'department': department,
             'faculty_code': faculty_code,
-            'subjects': subjects
+            'subjects': subjects,
+            'unread_feedback_count': unread_count
         })
     finally:
         cursor.close()
@@ -690,6 +728,84 @@ def add_marks():
         conn.rollback()
         print(f"Error adding marks: {str(e)}")
         return jsonify({'message': f'Error updating marks: {str(e)}'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/faculty/feedback/unread', methods=['GET'])
+@token_required
+def get_faculty_unread_messages():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify([])
+        
+        faculty_id = result[0]
+        
+        cursor.execute("""
+            SELECT DISTINCT 
+                s.student_id, 
+                s.name as student_name, 
+                s.roll_number,
+                s.class_name,
+                sub.subject_id, 
+                sub.subject_name,
+                (SELECT COUNT(*) FROM feedback_messages fm2 
+                 WHERE fm2.thread_id = ft.thread_id 
+                 AND fm2.sender_role = 'student' 
+                 AND fm2.is_read = 0) as unread_count,
+                (SELECT message FROM feedback_messages fm3 
+                 WHERE fm3.thread_id = ft.thread_id 
+                 AND fm3.sender_role = 'student'
+                 ORDER BY fm3.created_at DESC 
+                 FETCH FIRST 1 ROW ONLY) as last_message,
+                (SELECT TO_CHAR(created_at, 'DD Mon YYYY HH24:MI') FROM feedback_messages fm4 
+                 WHERE fm4.thread_id = ft.thread_id 
+                 ORDER BY fm4.created_at DESC 
+                 FETCH FIRST 1 ROW ONLY) as last_message_time
+            FROM feedback_threads ft
+            JOIN students s ON ft.student_id = s.student_id
+            JOIN subjects sub ON ft.subject_id = sub.subject_id
+            WHERE ft.faculty_id = :faculty_id
+            AND EXISTS (
+                SELECT 1 FROM feedback_messages fm 
+                WHERE fm.thread_id = ft.thread_id 
+                AND fm.sender_role = 'student' 
+                AND fm.is_read = 0
+            )
+            ORDER BY last_message_time DESC
+        """, {'faculty_id': faculty_id})
+        
+        unread = []
+        for row in cursor.fetchall():
+            # Handle CLOB for last_message
+            last_msg = row[7]
+            if hasattr(last_msg, 'read'):
+                last_msg = last_msg.read()
+            else:
+                last_msg = str(last_msg) if last_msg else ""
+            
+            # Truncate message if too long
+            if len(last_msg) > 100:
+                last_msg = last_msg[:100] + "..."
+            
+            unread.append({
+                'student_id': row[0],
+                'student_name': row[1],
+                'roll_number': row[2],
+                'class_name': row[3],
+                'subject_id': row[4],
+                'subject_name': row[5],
+                'unread_count': row[6],
+                'last_message': last_msg,
+                'last_message_time': row[8]
+            })
+        
+        return jsonify(unread)
     finally:
         cursor.close()
         conn.close()
