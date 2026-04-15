@@ -155,6 +155,7 @@ Should show: "Backend running successfully"
 
 ### Step 2: Open Login Page
 Click or paste in browser:
+runs cd frontend → runs python -m http.server 8000
 ```
 file:///C:/Users/vansh/student_faculty_management_system/frontend/login_test.html
 ```

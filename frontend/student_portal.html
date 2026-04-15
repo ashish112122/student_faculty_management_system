@@ -121,6 +121,15 @@
         
         /* Hidden */
         .hidden { display: none; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 10px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #EAEAEA; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; color: #2C2C2C; }
+        .modal-body { padding: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .close-btn:hover { color: #333; }
     </style>
 </head>
 <body>
@@ -231,8 +240,7 @@
                 <!-- Chat Sidebar -->
                 <div class="chat-sidebar">
                     <div class="chat-sidebar-header">
-                        <button class="new-chat-btn" onclick="showNewChatOptions()">+ New Chat</button>
-                        <input type="text" class="search-chat-input" placeholder="Search chats..." oninput="searchChats(this.value)">
+                        <!-- Removed New Chat and Search for students -->
                     </div>
                     <div class="chat-threads-list" id="chat-threads-list"></div>
                 </div>
@@ -263,6 +271,8 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Removed New Chat Dialog for Students -->
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -278,6 +288,10 @@
         let currentSubject = null;
         let currentFaculty = null;
         let marksChart = null;
+        
+        // Variables for new chat
+        let selectedFacultyForChat = null;
+        let selectedSubjectForChat = null;
         
         function toggleMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -512,23 +526,7 @@
             }
         }
         
-        function searchChats(query) {
-            const filtered = allThreads.filter(t => {
-                const searchText = `${t.faculty_name} ${t.subject_name} ${t.faculty_code}`.toLowerCase();
-                return searchText.includes(query.toLowerCase());
-            });
-            renderThreadsList(filtered);
-        }
-        
-        function showNewChatOptions() {
-            if (allThreads.length === 0) {
-                alert('No faculty/subjects available for feedback');
-                return;
-            }
-            
-            // Show first thread or focus on search
-            document.querySelector('.search-chat-input').focus();
-        }
+        // Removed new chat and search functions for students
         
         async function openChat(facultyId, subjectId, facultyName, subjectName) {
             currentFaculty = {id: facultyId, name: facultyName};
@@ -592,9 +590,19 @@
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             
-            if (!message && !selectedFile) return;
+            if (!message && !selectedFile) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            if (!currentFaculty || !currentSubject) {
+                alert('Please select a chat first');
+                return;
+            }
             
             try {
+                let response;
+                
                 if (selectedFile) {
                     // Send with attachment
                     const formData = new FormData();
@@ -603,7 +611,7 @@
                     formData.append('message', message);
                     formData.append('attachment', selectedFile);
                     
-                    await fetch(`${API_URL}/student/feedback/send`, {
+                    response = await fetch(`${API_URL}/student/feedback/send`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -614,7 +622,7 @@
                     removeAttachment();
                 } else {
                     // Send without attachment
-                    await fetch(`${API_URL}/student/feedback/send`, {
+                    response = await fetch(`${API_URL}/student/feedback/send`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -628,10 +636,19 @@
                     });
                 }
                 
-                input.value = '';
-                loadChatMessages();
+                if (response.ok) {
+                    input.value = '';
+                    await loadChatMessages();
+                    // Scroll to bottom to show new message
+                    const messagesContainer = document.getElementById('chat-messages');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else {
+                    const errorData = await response.json();
+                    alert('Error sending message: ' + (errorData.message || 'Unknown error'));
+                }
             } catch (error) {
                 console.error('Error sending message:', error);
+                alert('Failed to send message. Please try again.');
             }
         }
         

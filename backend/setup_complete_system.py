@@ -324,11 +324,11 @@ def setup_system():
     conn.commit()
     print(f"   OK Generated {marks_count} marks")
     
-    # Generate attendance (1 Jan - 1 May 2026)
+    # Generate attendance (1 Jan - 1 April 2026)
     print("\n7. Generating attendance...")
     attendance_count = 0
     start_date = datetime(2026, 1, 1)
-    end_date = datetime(2026, 5, 1)
+    end_date = datetime(2026, 4, 1)
     
     for student_id in student_ids:
         cursor.execute("SELECT class_name FROM students WHERE student_id = :sid", {'sid': student_id})
@@ -380,9 +380,11 @@ def setup_system():
         alert_type = 'Critical' if percentage < 50 else 'Warning'
         message = f"Low attendance in {subject_name}: {percentage}%"
         
-        # Vary the alert creation date (spread over last 30 days)
+        # Vary the alert creation date and time (spread over last 30 days)
         days_ago = idx % 30
-        alert_date = datetime(2026, 4, 5) - timedelta(days=days_ago)
+        hours = random.randint(8, 18)  # Between 8 AM and 6 PM
+        minutes = random.randint(0, 59)
+        alert_date = datetime(2026, 4, 5, hours, minutes) - timedelta(days=days_ago)
         
         cursor.execute("""
             INSERT INTO alerts (alert_id, student_id, subject_id, alert_type, message, is_read, created_at)

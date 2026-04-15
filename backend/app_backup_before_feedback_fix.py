@@ -354,29 +354,17 @@ def get_student_feedback_thread(faculty_id, subject_id):
         
         student_id = result[0]
         
-        # Get thread
         cursor.execute("""
-            SELECT thread_id FROM feedback_threads
-            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
-        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
-        
-        thread = cursor.fetchone()
-        if not thread:
-            return jsonify([])
-        
-        thread_id = thread[0]
-        
-        # Get messages
-        cursor.execute("""
-            SELECT message_id, sender_role, message, is_read, created_at, 
+            SELECT feedback_id, sender_role, message, is_read, created_at, 
                    attachment_path, attachment_name, attachment_type
-            FROM feedback_messages
-            WHERE thread_id = :thread_id
+            FROM feedback
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
             ORDER BY created_at ASC
-        """, {'thread_id': thread_id})
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
         
         messages = []
         for row in cursor.fetchall():
+            # Convert CLOB to string if needed
             message_text = row[2].read() if hasattr(row[2], 'read') else str(row[2])
             messages.append({
                 'feedback_id': row[0],
@@ -389,11 +377,10 @@ def get_student_feedback_thread(faculty_id, subject_id):
                 'has_attachment': row[6] is not None
             })
         
-        # Mark as read
         cursor.execute("""
-            UPDATE feedback_messages SET is_read = 1
-            WHERE thread_id = :thread_id AND sender_role = 'faculty' AND is_read = 0
-        """, {'thread_id': thread_id})
+            UPDATE feedback SET is_read = 1
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id AND sender_role = 'faculty' AND is_read = 0
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
         conn.commit()
         
         return jsonify(messages)
@@ -410,9 +397,10 @@ def send_student_feedback():
     try:
         # Check if request has file
         if 'attachment' in request.files:
+            # Handle multipart/form-data
             file = request.files['attachment']
-            faculty_id = int(request.form.get('faculty_id'))
-            subject_id = int(request.form.get('subject_id'))
+            faculty_id = request.form.get('faculty_id')
+            subject_id = request.form.get('subject_id')
             message = request.form.get('message', '')
             
             attachment_path = None
@@ -430,6 +418,7 @@ def send_student_feedback():
                 attachment_name = filename
                 attachment_type = filename.rsplit('.', 1)[1].lower()
         else:
+            # Handle JSON data (no attachment)
             data = request.get_json()
             faculty_id = data.get('faculty_id')
             subject_id = data.get('subject_id')
@@ -445,52 +434,27 @@ def send_student_feedback():
         
         student_id = result[0]
         
-        # Get or create thread
         cursor.execute("""
-            SELECT thread_id FROM feedback_threads
-            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
-        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
-        
-        thread = cursor.fetchone()
-        if thread:
-            thread_id = thread[0]
-        else:
-            # Create new thread
-            cursor.execute("""
-                INSERT INTO feedback_threads (thread_id, student_id, faculty_id, subject_id, initiated_by, created_at, last_message_at)
-                VALUES (feedback_threads_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'student', SYSDATE, SYSDATE)
-            """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
-            cursor.execute("SELECT feedback_threads_seq.CURRVAL FROM dual")
-            thread_id = cursor.fetchone()[0]
-        
-        # Insert message
-        cursor.execute("""
-            INSERT INTO feedback_messages (message_id, thread_id, sender_id, sender_role, message, is_read, created_at,
-                                          attachment_path, attachment_name, attachment_type)
-            VALUES (feedback_messages_seq.NEXTVAL, :thread_id, :sender_id, 'student', :message, 0, SYSDATE,
+            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read, 
+                                 attachment_path, attachment_name, attachment_type)
+            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'student', :message, 0,
                    :attachment_path, :attachment_name, :attachment_type)
         """, {
-            'thread_id': thread_id,
-            'sender_id': request.user_id,
+            'student_id': student_id,
+            'faculty_id': faculty_id,
+            'subject_id': subject_id,
             'message': message,
             'attachment_path': attachment_path,
             'attachment_name': attachment_name,
             'attachment_type': attachment_type
         })
         
-        # Update thread
-        cursor.execute("""
-            UPDATE feedback_threads SET last_message_at = SYSDATE WHERE thread_id = :thread_id
-        """, {'thread_id': thread_id})
-        
         conn.commit()
         return jsonify({'message': 'Message sent successfully'})
     except Exception as e:
         conn.rollback()
         print(f"Error sending feedback: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'message': f'Error sending message: {str(e)}'}), 500
+        return jsonify({'message': 'Error sending message'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -710,14 +674,12 @@ def get_faculty_feedback_threads():
         
         cursor.execute("""
             SELECT DISTINCT s.student_id, s.name, s.class_name, sub.subject_id, sub.subject_name,
-                   (SELECT COUNT(*) FROM feedback_messages fm 
-                    JOIN feedback_threads ft ON fm.thread_id = ft.thread_id
-                    WHERE ft.student_id = s.student_id AND ft.faculty_id = :faculty_id 
-                    AND ft.subject_id = sub.subject_id AND fm.sender_role = 'student' AND fm.is_read = 0) as unread_count
-            FROM feedback_threads ft
-            JOIN students s ON ft.student_id = s.student_id
-            JOIN subjects sub ON ft.subject_id = sub.subject_id
-            WHERE ft.faculty_id = :faculty_id
+                   (SELECT COUNT(*) FROM feedback WHERE student_id = s.student_id AND faculty_id = :faculty_id 
+                    AND subject_id = sub.subject_id AND sender_role = 'student' AND is_read = 0) as unread_count
+            FROM feedback f
+            JOIN students s ON f.student_id = s.student_id
+            JOIN subjects sub ON f.subject_id = sub.subject_id
+            WHERE f.faculty_id = :faculty_id
             ORDER BY s.name
         """, {'faculty_id': faculty_id})
         
@@ -751,29 +713,17 @@ def get_faculty_feedback_thread(student_id, subject_id):
         
         faculty_id = result[0]
         
-        # Get thread
         cursor.execute("""
-            SELECT thread_id FROM feedback_threads
-            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
-        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
-        
-        thread = cursor.fetchone()
-        if not thread:
-            return jsonify([])
-        
-        thread_id = thread[0]
-        
-        # Get messages
-        cursor.execute("""
-            SELECT message_id, sender_role, message, is_read, created_at, 
+            SELECT feedback_id, sender_role, message, is_read, created_at, 
                    attachment_path, attachment_name, attachment_type
-            FROM feedback_messages
-            WHERE thread_id = :thread_id
+            FROM feedback
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
             ORDER BY created_at ASC
-        """, {'thread_id': thread_id})
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
         
         messages = []
         for row in cursor.fetchall():
+            # Convert CLOB to string if needed
             message_text = row[2].read() if hasattr(row[2], 'read') else str(row[2])
             messages.append({
                 'feedback_id': row[0],
@@ -786,11 +736,10 @@ def get_faculty_feedback_thread(student_id, subject_id):
                 'has_attachment': row[6] is not None
             })
         
-        # Mark as read
         cursor.execute("""
-            UPDATE feedback_messages SET is_read = 1
-            WHERE thread_id = :thread_id AND sender_role = 'student' AND is_read = 0
-        """, {'thread_id': thread_id})
+            UPDATE feedback SET is_read = 1
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id AND sender_role = 'student' AND is_read = 0
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
         conn.commit()
         
         return jsonify(messages)
@@ -807,9 +756,10 @@ def send_faculty_feedback():
     try:
         # Check if request has file
         if 'attachment' in request.files:
+            # Handle multipart/form-data
             file = request.files['attachment']
-            student_id = int(request.form.get('student_id'))
-            subject_id = int(request.form.get('subject_id'))
+            student_id = request.form.get('student_id')
+            subject_id = request.form.get('subject_id')
             message = request.form.get('message', '')
             
             attachment_path = None
@@ -827,6 +777,7 @@ def send_faculty_feedback():
                 attachment_name = filename
                 attachment_type = filename.rsplit('.', 1)[1].lower()
         else:
+            # Handle JSON data (no attachment)
             data = request.get_json()
             student_id = data.get('student_id')
             subject_id = data.get('subject_id')
@@ -842,52 +793,27 @@ def send_faculty_feedback():
         
         faculty_id = result[0]
         
-        # Get or create thread
         cursor.execute("""
-            SELECT thread_id FROM feedback_threads
-            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
-        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
-        
-        thread = cursor.fetchone()
-        if thread:
-            thread_id = thread[0]
-        else:
-            # Create new thread
-            cursor.execute("""
-                INSERT INTO feedback_threads (thread_id, student_id, faculty_id, subject_id, initiated_by, created_at, last_message_at)
-                VALUES (feedback_threads_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'faculty', SYSDATE, SYSDATE)
-            """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
-            cursor.execute("SELECT feedback_threads_seq.CURRVAL FROM dual")
-            thread_id = cursor.fetchone()[0]
-        
-        # Insert message
-        cursor.execute("""
-            INSERT INTO feedback_messages (message_id, thread_id, sender_id, sender_role, message, is_read, created_at,
-                                          attachment_path, attachment_name, attachment_type)
-            VALUES (feedback_messages_seq.NEXTVAL, :thread_id, :sender_id, 'faculty', :message, 0, SYSDATE,
+            INSERT INTO feedback (feedback_id, student_id, faculty_id, subject_id, sender_role, message, is_read,
+                                 attachment_path, attachment_name, attachment_type)
+            VALUES (feedback_seq.NEXTVAL, :student_id, :faculty_id, :subject_id, 'faculty', :message, 0,
                    :attachment_path, :attachment_name, :attachment_type)
         """, {
-            'thread_id': thread_id,
-            'sender_id': request.user_id,
+            'student_id': student_id,
+            'faculty_id': faculty_id,
+            'subject_id': subject_id,
             'message': message,
             'attachment_path': attachment_path,
             'attachment_name': attachment_name,
             'attachment_type': attachment_type
         })
         
-        # Update thread
-        cursor.execute("""
-            UPDATE feedback_threads SET last_message_at = SYSDATE WHERE thread_id = :thread_id
-        """, {'thread_id': thread_id})
-        
         conn.commit()
         return jsonify({'message': 'Message sent successfully'})
     except Exception as e:
         conn.rollback()
         print(f"Error sending feedback: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'message': f'Error sending message: {str(e)}'}), 500
+        return jsonify({'message': 'Error sending message'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -1107,18 +1033,18 @@ def update_attendance_alerts(cursor, conn, subject_id, class_name):
         print(f"Error updating alerts: {str(e)}")
 
 # Download attachment endpoint
-@app.route('/api/feedback/attachment/<int:message_id>', methods=['GET'])
+@app.route('/api/feedback/attachment/<int:feedback_id>', methods=['GET'])
 @token_required
-def download_attachment(message_id):
+def download_attachment(feedback_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
         cursor.execute("""
             SELECT attachment_path, attachment_name 
-            FROM feedback_messages 
-            WHERE message_id = :message_id
-        """, {'message_id': message_id})
+            FROM feedback 
+            WHERE feedback_id = :feedback_id
+        """, {'feedback_id': feedback_id})
         
         result = cursor.fetchone()
         if not result or not result[0]:

@@ -100,6 +100,16 @@
         
         /* Hidden */
         .hidden { display: none; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #EAEAEA; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; color: #2C2C2C; }
+        .modal-body { padding: 20px; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .close-btn:hover { color: #333; }
+        .subject-card:hover, .batch-card:hover, .student-card:hover { background: #f0f7ff; border-color: #3A7BD5; }
     </style>
 </head>
 <body>
@@ -220,30 +230,36 @@
             </div>
         </div>
         
-        <!-- Feedback View - ChatGPT Style -->
+        <!-- Feedback View - ChatGPT Style with Batch Selector -->
         <div id="feedback-view" class="hidden">
             <div class="header">
                 <h1>Feedback Threads</h1>
                 <button class="btn btn-back" onclick="showDashboard()">← Back to Dashboard</button>
             </div>
             <div class="feedback-chatgpt-container">
-                <!-- Chat Sidebar -->
+                <!-- Left Panel: Batch and Student Selection -->
                 <div class="chat-sidebar">
                     <div class="chat-sidebar-header">
-                        <input type="text" class="search-chat-input" placeholder="Search chats..." oninput="searchChats(this.value)">
+                        <label style="color: white; font-weight: bold; display: block; margin-bottom: 8px;">Select Batch:</label>
+                        <select id="feedback-batch-selector" onchange="loadStudentsForFeedback()" 
+                                style="width: 100%; padding: 10px; border: 1px solid #3a3a3a; border-radius: 8px; background: #3a3a3a; color: white; margin-bottom: 10px;">
+                            <option value="">-- Select Batch --</option>
+                        </select>
                     </div>
-                    <div class="chat-threads-list" id="chat-threads-list"></div>
+                    <div class="chat-threads-list" id="feedback-students-list">
+                        <p style="text-align:center; padding:20px; color:#999;">Select a batch to view students</p>
+                    </div>
                 </div>
                 
                 <!-- Chat Main Area -->
                 <div class="chat-main-area">
                     <div class="chat-header">
-                        <h2 id="chat-title">Select a chat to view conversation</h2>
+                        <h2 id="chat-title">Select a student to view conversation</h2>
                     </div>
                     <div class="chat-messages" id="chat-messages">
                         <div class="empty-chat-state">
                             <h3>💬 Student Feedback</h3>
-                            <p>Select a student chat from the sidebar to view and respond to messages</p>
+                            <p>Select a batch and student from the left panel to view and respond to messages</p>
                         </div>
                     </div>
                     <div class="chat-input-container">
@@ -261,6 +277,8 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Removed Start Conversation Dialog - Using batch-based selection instead -->
     </div>
     
     <script>
@@ -275,6 +293,12 @@
         let currentSubject = null;
         let currentBatch = null;
         let currentStudent = null;
+        
+        // Variables for start conversation flow
+        let selectedSubjectForConv = null;
+        let selectedBatchForConv = null;
+        let selectedStudentForConv = null;
+        let allStudentsForConv = [];
         
         function toggleMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -307,7 +331,78 @@
         function showFeedback() {
             hideAllViews();
             document.getElementById('feedback-view').classList.remove('hidden');
-            loadFeedbackThreads();
+            loadBatchesForFeedback();
+        }
+        
+        function loadBatchesForFeedback() {
+            const batches = [...new Set(facultyData.subjects.map(s => s.class_name))];
+            const selector = document.getElementById('feedback-batch-selector');
+            
+            selector.innerHTML = '<option value="">-- Select Batch --</option>' + 
+                batches.map(batch => `<option value="${batch}">${batch}</option>`).join('');
+        }
+        
+        let allFeedbackStudents = [];
+        
+        async function loadStudentsForFeedback() {
+            const batch = document.getElementById('feedback-batch-selector').value;
+            
+            if (!batch) {
+                document.getElementById('feedback-students-list').innerHTML = 
+                    '<p style="text-align:center; padding:20px; color:#999;">Select a batch to view students</p>';
+                return;
+            }
+            
+            const subject = facultyData.subjects[0];
+            
+            try {
+                const response = await fetch(`${API_URL}/faculty/marks/${subject.subject_id}/${batch}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                allFeedbackStudents = await response.json();
+                
+                displayFeedbackStudents(allFeedbackStudents);
+            } catch (error) {
+                console.error('Error loading students:', error);
+                document.getElementById('feedback-students-list').innerHTML = 
+                    '<p style="text-align:center; padding:20px; color:#dc3545;">Error loading students</p>';
+            }
+        }
+        
+        function displayFeedbackStudents(students) {
+            const container = document.getElementById('feedback-students-list');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No students found</p>';
+                return;
+            }
+            
+            const subject = facultyData.subjects[0];
+            
+            container.innerHTML = students.map(s => {
+                const threadId = `${s.student_id}_${subject.subject_id}`;
+                return `
+                    <div class="chat-thread-item ${activeThreadId === threadId ? 'active' : ''}" 
+                         onclick="openFeedbackChat(${s.student_id}, ${subject.subject_id}, '${s.name}', '${subject.subject_name}', '${s.roll_number}', '${document.getElementById('feedback-batch-selector').value}')">
+                        <h4>${s.name}</h4>
+                        <p>Roll: ${s.roll_number} | Batch: ${document.getElementById('feedback-batch-selector').value}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function filterFeedbackStudents(searchTerm) {
+            if (!searchTerm.trim()) {
+                displayFeedbackStudents(allFeedbackStudents);
+                return;
+            }
+            
+            const filtered = allFeedbackStudents.filter(s => 
+                s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                s.roll_number.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            displayFeedbackStudents(filtered);
         }
         
         async function loadDashboard() {
@@ -566,47 +661,8 @@
         let allThreads = [];
         let activeThreadId = null;
         
-        async function loadFeedbackThreads() {
-            try {
-                const response = await fetch(`${API_URL}/faculty/feedback/threads`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                allThreads = await response.json();
-                
-                renderThreadsList(allThreads);
-            } catch (error) {
-                console.error('Error loading threads:', error);
-            }
-        }
-        
-        function renderThreadsList(threads) {
-            const container = document.getElementById('chat-threads-list');
-            if (threads.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No feedback threads</p>';
-            } else {
-                container.innerHTML = threads.map(t => {
-                    const threadId = `${t.student_id}_${t.subject_id}`;
-                    const chatName = `Chat with ${t.student_name} - ${t.subject_name}`;
-                    return `
-                        <div class="chat-thread-item ${activeThreadId === threadId ? 'active' : ''}" onclick="openChat(${t.student_id}, ${t.subject_id}, '${t.student_name}', '${t.subject_name}')">
-                            <h4>${chatName}${t.unread_count > 0 ? `<span class="unread-badge">${t.unread_count}</span>` : ''}</h4>
-                            <p>${t.class_name}</p>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-        
-        function searchChats(query) {
-            const filtered = allThreads.filter(t => {
-                const searchText = `${t.student_name} ${t.subject_name} ${t.class_name}`.toLowerCase();
-                return searchText.includes(query.toLowerCase());
-            });
-            renderThreadsList(filtered);
-        }
-        
-        async function openChat(studentId, subjectId, studentName, subjectName) {
-            currentStudent = {id: studentId, name: studentName};
+        async function openFeedbackChat(studentId, subjectId, studentName, subjectName, rollNumber, className) {
+            currentStudent = {id: studentId, name: studentName, roll: rollNumber, class: className};
             currentSubject = {id: subjectId, name: subjectName};
             activeThreadId = `${studentId}_${subjectId}`;
             
@@ -614,9 +670,9 @@
             document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
             event.target.closest('.chat-thread-item')?.classList.add('active');
             
-            document.getElementById('chat-title').textContent = `Chat with ${studentName} - ${subjectName}`;
+            document.getElementById('chat-title').textContent = `Chat with ${studentName} (Roll: ${rollNumber}) - ${subjectName}`;
             
-            loadChatMessages();
+            await loadChatMessages();
         }
         
         let selectedFile = null;
@@ -667,9 +723,19 @@
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             
-            if (!message && !selectedFile) return;
+            if (!message && !selectedFile) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            if (!currentStudent || !currentSubject) {
+                alert('Please select a student first');
+                return;
+            }
             
             try {
+                let response;
+                
                 if (selectedFile) {
                     // Send with attachment
                     const formData = new FormData();
@@ -678,7 +744,7 @@
                     formData.append('message', message);
                     formData.append('attachment', selectedFile);
                     
-                    await fetch(`${API_URL}/faculty/feedback/send`, {
+                    response = await fetch(`${API_URL}/faculty/feedback/send`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -689,7 +755,7 @@
                     removeAttachment();
                 } else {
                     // Send without attachment
-                    await fetch(`${API_URL}/faculty/feedback/send`, {
+                    response = await fetch(`${API_URL}/faculty/feedback/send`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -703,10 +769,19 @@
                     });
                 }
                 
-                input.value = '';
-                loadChatMessages();
+                if (response.ok) {
+                    input.value = '';
+                    await loadChatMessages();
+                    // Scroll to bottom to show new message
+                    const messagesContainer = document.getElementById('chat-messages');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else {
+                    const errorData = await response.json();
+                    alert('Error sending message: ' + (errorData.message || 'Unknown error'));
+                }
             } catch (error) {
                 console.error('Error sending message:', error);
+                alert('Failed to send message. Please try again.');
             }
         }
         
