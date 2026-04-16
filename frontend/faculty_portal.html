@@ -422,16 +422,38 @@
             const subject = facultyData.subjects[0];
             const batch = document.getElementById('feedback-batch-selector').value;
             
-            container.innerHTML = students.map(s => {
+            // Clear container first
+            container.innerHTML = '';
+            
+            // Create student items
+            students.forEach(s => {
                 const threadId = `${s.student_id}_${subject.subject_id}`;
-                return `
-                    <div class="chat-thread-item ${activeThreadId === threadId ? 'active' : ''}" 
-                         onclick="openFeedbackChat(${s.student_id}, ${subject.subject_id}, '${s.name.replace(/'/g, "\\'")}', '${subject.subject_name.replace(/'/g, "\\'")}', '${s.roll_number}', '${batch}')">
-                        <h4>${s.name}</h4>
-                        <p>Roll: ${s.roll_number} | Batch: ${batch}</p>
-                    </div>
+                const div = document.createElement('div');
+                div.className = `chat-thread-item ${activeThreadId === threadId ? 'active' : ''}`;
+                
+                // Escape quotes in names for safety
+                const safeName = s.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeSubjectName = subject.subject_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                div.innerHTML = `
+                    <h4>${s.name}</h4>
+                    <p>Roll: ${s.roll_number} | Batch: ${batch}</p>
                 `;
-            }).join('');
+                
+                // Add click event listener directly
+                div.addEventListener('click', function() {
+                    openFeedbackChat(
+                        s.student_id, 
+                        subject.subject_id, 
+                        s.name, 
+                        subject.subject_name, 
+                        s.roll_number, 
+                        batch
+                    );
+                });
+                
+                container.appendChild(div);
+            });
         }
         
         function filterFeedbackStudents(searchTerm) {
@@ -722,6 +744,8 @@
         let activeThreadId = null;
         
         async function openFeedbackChat(studentId, subjectId, studentName, subjectName, rollNumber, className) {
+            console.log('Opening chat:', studentName, studentId); // Debug log
+            
             currentStudent = {id: studentId, name: studentName, roll: rollNumber, class: className};
             currentSubject = {id: subjectId, name: subjectName};
             activeThreadId = `${studentId}_${subjectId}`;
@@ -737,11 +761,15 @@
             document.getElementById('chat-close-button').style.display = 'block';
             
             // Update active state in sidebar
-            document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
-            // Find and activate the correct item
+            document.querySelectorAll('.chat-thread-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate the correct item by checking the onclick attribute
             const items = document.querySelectorAll('.chat-thread-item');
             items.forEach(item => {
-                if (item.onclick && item.onclick.toString().includes(`${studentId}`)) {
+                const onclickAttr = item.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(`openFeedbackChat(${studentId},`)) {
                     item.classList.add('active');
                 }
             });
@@ -752,20 +780,28 @@
         }
         
         function closeChatView() {
+            console.log('Closing chat'); // Debug log
+            
             // Clear active chat state
             currentStudent = null;
             currentSubject = null;
             activeThreadId = null;
             sessionStorage.removeItem('activeFeedbackChat');
             
-            // Hide close button and chat, show notification panel or empty state
+            // Hide close button
             document.getElementById('chat-close-button').style.display = 'none';
+            
+            // Reset chat title
             document.getElementById('chat-title').textContent = 'Select a student to view conversation';
+            
+            // Clear chat messages
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            chatMessagesContainer.innerHTML = '';
             
             // Clear active state from sidebar
             document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
             
-            // Reload notification panel
+            // Show empty state or reload notification panel
             loadNewMessagesNotification();
         }
         
