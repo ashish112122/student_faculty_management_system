@@ -277,7 +277,7 @@
                         </div>
                         <div class="chat-input">
                             <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
-                            <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach file">📎</button>
+                            <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach file"><i class="fa-solid fa-paperclip"></i></button>
                             <input type="text" id="chat-input" placeholder="Type your reply..." onkeypress="if(event.key==='Enter') sendMessage()">
                             <button onclick="sendMessage()">Send</button>
                         </div>
@@ -879,7 +879,7 @@
             if (file) {
                 selectedFile = file;
                 document.getElementById('attachment-preview').classList.add('show');
-                document.getElementById('attachment-name').textContent = `📎 ${file.name}`;
+                document.getElementById('attachment-name').innerHTML = `<i class="fa-solid fa-paperclip"></i> ${file.name}`;
             }
         }
         
@@ -929,7 +929,7 @@
                             <div class="text">${m.message}</div>
                             ${m.has_attachment ? `<div class="attachment-link">
                                 <a href="${API_URL}/feedback/attachment/${m.feedback_id}" target="_blank" class="attachment-link">
-                                    <span class="attachment-icon">📎</span> ${m.attachment_name}
+                                    <i class="fa-solid fa-paperclip attachment-icon"></i> ${m.attachment_name}
                                 </a>
                             </div>` : ''}
                             <div class="time">${m.created_at}</div>
