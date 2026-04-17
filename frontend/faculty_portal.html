@@ -510,6 +510,19 @@
                 const response = await fetch(`${API_URL}/faculty/dashboard`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                // Check for authentication errors
+                if (response.status === 401) {
+                    console.error('Authentication failed - logging out');
+                    localStorage.clear();
+                    window.location.href = 'login_test.html';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 facultyData = await response.json();
                 
                 document.getElementById('faculty-name').textContent = facultyData.name;
@@ -538,14 +551,8 @@
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                // Don't force logout on error - could be temporary network issue
-                if (error.message && error.message.includes('401')) {
-                    // Only logout on authentication error
-                    localStorage.clear();
-                    window.location.href = 'login_test.html';
-                } else {
-                    alert('Error loading dashboard. Please try refreshing the page.');
-                }
+                // Only show alert for non-auth errors
+                alert('Error loading dashboard. Please check your connection and try refreshing.');
             }
         }
         
@@ -1059,6 +1066,8 @@
         
         function logout() {
             localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            sessionStorage.clear();
             window.location.href = 'login_test.html';
         }
         

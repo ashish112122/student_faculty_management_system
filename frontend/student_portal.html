@@ -332,30 +332,35 @@
         function showDashboard() {
             hideAllViews();
             document.getElementById('dashboard-view').classList.remove('hidden');
+            saveViewState();
         }
         
         function showMarks() {
             hideAllViews();
             document.getElementById('marks-view').classList.remove('hidden');
             loadMarksSubjects();
+            saveViewState();
         }
         
         function showAttendance() {
             hideAllViews();
             document.getElementById('attendance-view').classList.remove('hidden');
             loadAttendanceSubjects();
+            saveViewState();
         }
         
         function showAlerts() {
             hideAllViews();
             document.getElementById('alerts-view').classList.remove('hidden');
             loadAlerts();
+            saveViewState();
         }
         
         function showFeedback() {
             hideAllViews();
             document.getElementById('feedback-view').classList.remove('hidden');
             loadFeedbackThreads();
+            saveViewState();
         }
         
         async function loadDashboard() {
@@ -363,6 +368,19 @@
                 const response = await fetch(`${API_URL}/student/dashboard`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                // Check for authentication errors
+                if (response.status === 401) {
+                    console.error('Authentication failed - logging out');
+                    localStorage.clear();
+                    window.location.href = 'login_test.html';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 studentData = await response.json();
                 
                 document.getElementById('student-name').textContent = studentData.name;
@@ -376,14 +394,8 @@
                 batchElement.textContent = `${studentData.class_name} (Roll No: ${studentData.roll_number})`;
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                // Don't force logout on error - could be temporary network issue
-                if (error.message && error.message.includes('401')) {
-                    // Only logout on authentication error
-                    localStorage.clear();
-                    window.location.href = 'login_test.html';
-                } else {
-                    alert('Error loading dashboard. Please try refreshing the page.');
-                }
+                // Only show alert for non-auth errors
+                alert('Error loading dashboard. Please check your connection and try refreshing.');
             }
         }
         
@@ -684,14 +696,50 @@
             }
         }
         
-
-        
         function logout() {
             localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            sessionStorage.clear();
             window.location.href = 'login_test.html';
         }
         
+        // Save current view state
+        function saveViewState() {
+            const views = ['dashboard-view', 'marks-view', 'subject-marks-view', 'attendance-view', 'subject-attendance-view', 'alerts-view', 'feedback-view'];
+            for (let view of views) {
+                const element = document.getElementById(view);
+                if (element && !element.classList.contains('hidden')) {
+                    sessionStorage.setItem('activeView', view);
+                    break;
+                }
+            }
+        }
+        
+        // Restore view state after refresh
+        function restoreViewState() {
+            const activeView = sessionStorage.getItem('activeView');
+            if (activeView && activeView !== 'dashboard-view') {
+                // Restore the view
+                if (activeView === 'marks-view') {
+                    showMarks();
+                } else if (activeView === 'attendance-view') {
+                    showAttendance();
+                } else if (activeView === 'alerts-view') {
+                    showAlerts();
+                } else if (activeView === 'feedback-view') {
+                    showFeedback();
+                }
+            }
+        }
+        
         loadDashboard();
+        
+        // Restore view state after page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                restoreViewState();
+            }, 1000);
+        });
     </script>
 </body>
 </html>
