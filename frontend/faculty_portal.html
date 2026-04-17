@@ -389,25 +389,44 @@
         async function loadStudentsForFeedback() {
             const batch = document.getElementById('feedback-batch-selector').value;
             
+            console.log('=== loadStudentsForFeedback ===');
+            console.log('Selected batch:', batch);
+            console.log('facultyData:', facultyData);
+            
             if (!batch) {
                 document.getElementById('feedback-students-list').innerHTML = 
                     '<p style="text-align:center; padding:20px; color:#999;">Select a batch to view students</p>';
                 return;
             }
             
+            if (!facultyData || !facultyData.subjects || facultyData.subjects.length === 0) {
+                console.error('ERROR: facultyData not loaded or has no subjects!');
+                document.getElementById('feedback-students-list').innerHTML = 
+                    '<p style="text-align:center; padding:20px; color:#dc3545;">Error: Faculty data not loaded. Please refresh the page.</p>';
+                return;
+            }
+            
             const subject = facultyData.subjects[0];
+            console.log('Using subject:', subject.subject_name, 'ID:', subject.subject_id);
             
             try {
+                console.log('Fetching students from API...');
                 const response = await fetch(`${API_URL}/faculty/marks/${subject.subject_id}/${batch}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 allFeedbackStudents = await response.json();
+                console.log('Students fetched:', allFeedbackStudents.length);
                 
                 displayFeedbackStudents(allFeedbackStudents);
             } catch (error) {
                 console.error('Error loading students:', error);
                 document.getElementById('feedback-students-list').innerHTML = 
-                    '<p style="text-align:center; padding:20px; color:#dc3545;">Error loading students</p>';
+                    '<p style="text-align:center; padding:20px; color:#dc3545;">Error loading students: ' + error.message + '</p>';
             }
         }
         
@@ -422,18 +441,22 @@
             const subject = facultyData.subjects[0];
             const batch = document.getElementById('feedback-batch-selector').value;
             
+            console.log('=== displayFeedbackStudents ===');
+            console.log('Number of students:', students.length);
+            console.log('Subject:', subject.subject_name, 'ID:', subject.subject_id);
+            console.log('Batch:', batch);
+            
             // Clear container first
             container.innerHTML = '';
             
             // Create student items
-            students.forEach(s => {
+            students.forEach((s, index) => {
                 const threadId = `${s.student_id}_${subject.subject_id}`;
                 const div = document.createElement('div');
                 div.className = `chat-thread-item ${activeThreadId === threadId ? 'active' : ''}`;
-                
-                // Escape quotes in names for safety
-                const safeName = s.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const safeSubjectName = subject.subject_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                div.setAttribute('data-student-id', s.student_id);
+                div.setAttribute('data-subject-id', subject.subject_id);
+                div.style.cursor = 'pointer'; // Ensure cursor shows it's clickable
                 
                 div.innerHTML = `
                     <h4>${s.name}</h4>
@@ -441,7 +464,15 @@
                 `;
                 
                 // Add click event listener directly
-                div.addEventListener('click', function() {
+                div.addEventListener('click', function(e) {
+                    console.log('=== CLICK EVENT FIRED ===');
+                    console.log('Clicked student:', s.name);
+                    console.log('Student ID:', s.student_id);
+                    console.log('Subject ID:', subject.subject_id);
+                    console.log('Roll:', s.roll_number);
+                    console.log('Batch:', batch);
+                    console.log('Event target:', e.target);
+                    
                     openFeedbackChat(
                         s.student_id, 
                         subject.subject_id, 
@@ -453,7 +484,11 @@
                 });
                 
                 container.appendChild(div);
+                console.log(`Student ${index + 1} added:`, s.name, 'ID:', s.student_id);
             });
+            
+            console.log('=== All students displayed ===');
+            console.log('Total items in container:', container.children.length);
         }
         
         function filterFeedbackStudents(searchTerm) {
@@ -744,8 +779,12 @@
         let activeThreadId = null;
         
         async function openFeedbackChat(studentId, subjectId, studentName, subjectName, rollNumber, className) {
-            console.log('Opening chat:', studentName, studentId); // Debug log
+            console.log('=== Opening chat ===');
+            console.log('Student:', studentName, 'ID:', studentId, 'Roll:', rollNumber);
+            console.log('Subject:', subjectName, 'ID:', subjectId);
+            console.log('Class:', className);
             
+            // Set current state
             currentStudent = {id: studentId, name: studentName, roll: rollNumber, class: className};
             currentSubject = {id: subjectId, name: subjectName};
             activeThreadId = `${studentId}_${subjectId}`;
@@ -755,28 +794,47 @@
                 studentId, subjectId, studentName, subjectName, rollNumber, className
             }));
             
-            // Hide notification panel and empty state, show chat
-            document.getElementById('empty-state').style.display = 'none';
-            document.getElementById('notification-panel').style.display = 'none';
-            document.getElementById('chat-close-button').style.display = 'block';
+            // Hide notification panel and empty state (check if they exist first)
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
             
-            // Update active state in sidebar
+            const notificationPanel = document.getElementById('notification-panel');
+            if (notificationPanel) {
+                notificationPanel.style.display = 'none';
+            }
+            
+            // Show close button
+            const closeButton = document.getElementById('chat-close-button');
+            if (closeButton) {
+                closeButton.style.display = 'block';
+            }
+            
+            // Update active state in sidebar using data attributes
             document.querySelectorAll('.chat-thread-item').forEach(item => {
                 item.classList.remove('active');
-            });
-            
-            // Find and activate the correct item by checking the onclick attribute
-            const items = document.querySelectorAll('.chat-thread-item');
-            items.forEach(item => {
-                const onclickAttr = item.getAttribute('onclick');
-                if (onclickAttr && onclickAttr.includes(`openFeedbackChat(${studentId},`)) {
+                const itemStudentId = item.getAttribute('data-student-id');
+                const itemSubjectId = item.getAttribute('data-subject-id');
+                if (itemStudentId == studentId && itemSubjectId == subjectId) {
                     item.classList.add('active');
+                    console.log('Activated student item in sidebar');
                 }
             });
             
-            document.getElementById('chat-title').textContent = `Chat with ${studentName} (Roll: ${rollNumber}) - ${subjectName}`;
+            // Update chat title with student info
+            const chatTitle = `Chat with ${studentName} (Roll: ${rollNumber}) - ${subjectName}`;
+            document.getElementById('chat-title').textContent = chatTitle;
+            console.log('Chat title set:', chatTitle);
             
+            // Make chat messages container visible
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            chatMessagesContainer.style.display = 'block';
+            
+            // Load messages
             await loadChatMessages();
+            
+            console.log('=== Chat opened successfully ===');
         }
         
         function closeChatView() {
@@ -794,14 +852,23 @@
             // Reset chat title
             document.getElementById('chat-title').textContent = 'Select a student to view conversation';
             
-            // Clear chat messages
+            // Clear chat messages and recreate empty state and notification panel
             const chatMessagesContainer = document.getElementById('chat-messages');
-            chatMessagesContainer.innerHTML = '';
+            chatMessagesContainer.innerHTML = `
+                <div class="empty-chat-state" id="empty-state">
+                    <h3><i class="fa-solid fa-comment"></i> Student Feedback</h3>
+                    <p>Select a batch and student from the left panel to view and respond to messages</p>
+                </div>
+                <div id="notification-panel" style="display: none; padding: 20px;">
+                    <h3 style="color: #2C2C2C; margin-bottom: 20px; text-align: center;"><i class="fa-solid fa-bell"></i> New Messages</h3>
+                    <div id="notification-list"></div>
+                </div>
+            `;
             
             // Clear active state from sidebar
             document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
             
-            // Show empty state or reload notification panel
+            // Show empty state or reload notification panel (now that elements exist)
             loadNewMessagesNotification();
         }
         
@@ -823,20 +890,40 @@
         }
         
         async function loadChatMessages() {
+            console.log('Loading chat messages for:', currentStudent.name);
+            
             try {
                 const response = await fetch(`${API_URL}/faculty/feedback/${currentStudent.id}/${currentSubject.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const messages = await response.json();
                 
-                console.log('Chat messages loaded:', messages); // Debug log
+                console.log('Chat messages loaded:', messages.length, 'messages'); // Debug log
                 
                 const container = document.getElementById('chat-messages');
                 
+                // Clear the container but preserve structure
+                container.innerHTML = '';
+                
                 if (messages.length === 0) {
-                    container.innerHTML = '<div class="empty-chat-state"><h3>No messages yet</h3><p>Start the conversation by sending a message below</p></div>';
+                    // Show empty state with student info
+                    container.innerHTML = `
+                        <div class="empty-chat-state">
+                            <h3><i class="fa-solid fa-comment"></i> No messages yet</h3>
+                            <p>Start the conversation with ${currentStudent.name} (Roll: ${currentStudent.roll})</p>
+                            <p style="color: #6c757d; font-size: 14px; margin-top: 10px;">
+                                Batch: ${currentStudent.class} | Subject: ${currentSubject.name}
+                            </p>
+                        </div>
+                    `;
                 } else {
-                    container.innerHTML = messages.map(m => `
+                    // Show messages
+                    const messagesHTML = messages.map(m => `
                         <div class="chat-message ${m.sender_role} ${m.sender_role === 'student' && !m.is_read ? 'unread' : ''}">
                             <div class="sender">${m.sender_role === 'faculty' ? 'You' : currentStudent.name}</div>
                             <div class="text">${m.message}</div>
@@ -848,17 +935,59 @@
                             <div class="time">${m.created_at}</div>
                         </div>
                     `).join('');
+                    
+                    container.innerHTML = messagesHTML;
+                }
+                
+                // Add back the empty-state and notification-panel elements (hidden) for next time
+                if (!document.getElementById('empty-state')) {
+                    const emptyState = document.createElement('div');
+                    emptyState.id = 'empty-state';
+                    emptyState.className = 'empty-chat-state';
+                    emptyState.style.display = 'none';
+                    emptyState.innerHTML = `
+                        <h3><i class="fa-solid fa-comment"></i> Student Feedback</h3>
+                        <p>Select a batch and student from the left panel to view and respond to messages</p>
+                    `;
+                    container.appendChild(emptyState);
+                }
+                
+                if (!document.getElementById('notification-panel')) {
+                    const notificationPanel = document.createElement('div');
+                    notificationPanel.id = 'notification-panel';
+                    notificationPanel.style.display = 'none';
+                    notificationPanel.style.padding = '20px';
+                    notificationPanel.innerHTML = `
+                        <h3 style="color: #2C2C2C; margin-bottom: 20px; text-align: center;"><i class="fa-solid fa-bell"></i> New Messages</h3>
+                        <div id="notification-list"></div>
+                    `;
+                    container.appendChild(notificationPanel);
                 }
                 
                 container.scrollTop = container.scrollHeight;
                 
-                // Refresh dashboard to update badge count
-                await loadDashboard();
+                console.log('Chat messages displayed');
                 
-                // Refresh conversation list
-                await loadNewMessagesNotification();
+                // Wait a moment for backend to process, then refresh
+                setTimeout(async () => {
+                    // Refresh dashboard to update badge count
+                    await loadDashboard();
+                    
+                    // Refresh conversation list to update unread counts
+                    await loadNewMessagesNotification();
+                    
+                    console.log('Dashboard and notifications refreshed after reading messages');
+                }, 500);
             } catch (error) {
                 console.error('Error loading chat:', error);
+                const container = document.getElementById('chat-messages');
+                container.innerHTML = `
+                    <div class="empty-chat-state">
+                        <h3 style="color: #dc3545;"><i class="fa-solid fa-exclamation-triangle"></i> Error Loading Messages</h3>
+                        <p>Could not load messages for ${currentStudent.name}</p>
+                        <p style="color: #6c757d; font-size: 14px;">Please try again or contact support if the problem persists.</p>
+                    </div>
+                `;
             }
         }
         
@@ -947,58 +1076,99 @@
                 const notificationPanel = document.getElementById('notification-panel');
                 const notificationList = document.getElementById('notification-list');
                 
-                if (allThreads.length > 0) {
+                // Only show if there are threads AND no chat is currently open
+                if (allThreads.length > 0 && !currentStudent) {
                     // Hide empty state, show all conversations
-                    emptyState.style.display = 'none';
-                    notificationPanel.style.display = 'block';
+                    if (emptyState) emptyState.style.display = 'none';
+                    if (notificationPanel) notificationPanel.style.display = 'block';
                     
                     // Update header to show all messages
-                    notificationPanel.querySelector('h3').innerHTML = '<i class="fa-solid fa-comment"></i> All Conversations';
+                    const header = notificationPanel.querySelector('h3');
+                    if (header) {
+                        header.innerHTML = '<i class="fa-solid fa-comment"></i> All Conversations';
+                    }
                     
-                    notificationList.innerHTML = allThreads.map(thread => {
-                        const hasUnread = thread.unread_count > 0;
-                        // Escape quotes in names for onclick handler
-                        const escapedStudentName = thread.student_name.replace(/'/g, "\\'");
-                        const escapedSubjectName = thread.subject_name.replace(/'/g, "\\'");
-                        const escapedClassName = thread.class_name.replace(/'/g, "\\'");
+                    // Clear notification list
+                    if (notificationList) {
+                        notificationList.innerHTML = '';
                         
-                        return `
-                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${hasUnread ? '#dc3545' : '#3A7BD5'}; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;"
-                             onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'"
-                             onclick="openStudentFromNotification(${thread.student_id}, ${thread.subject_id}, '${escapedStudentName}', '${escapedSubjectName}', '', '${escapedClassName}')">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="flex: 1;">
-                                    <div style="font-weight: bold; color: #2C2C2C; font-size: 16px;">
-                                        ${hasUnread ? '<i class="fa-solid fa-circle" style="color: #dc3545; font-size: 8px; margin-right: 8px;"></i>' : ''}${thread.student_name}
+                        // Filter to show only threads with unread messages
+                        const unreadThreads = allThreads.filter(thread => thread.unread_count > 0);
+                        
+                        if (unreadThreads.length === 0) {
+                            // No unread messages
+                            notificationList.innerHTML = '<p style="text-align:center; padding:20px; color:#6c757d;">No unread messages</p>';
+                        } else {
+                            // Create notification items with event listeners (no inline onclick)
+                            unreadThreads.forEach(thread => {
+                                const hasUnread = thread.unread_count > 0;
+                                
+                                const div = document.createElement('div');
+                                div.style.cssText = `background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${hasUnread ? '#dc3545' : '#3A7BD5'}; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s;`;
+                                
+                                div.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: bold; color: #2C2C2C; font-size: 16px;">
+                                                ${hasUnread ? '<i class="fa-solid fa-circle" style="color: #dc3545; font-size: 8px; margin-right: 8px;"></i>' : ''}${thread.student_name}
+                                            </div>
+                                            <div style="color: #6c757d; font-size: 13px; margin-top: 4px;">
+                                                ${thread.class_name} • ${thread.subject_name}
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                            ${hasUnread ? `<div style="color: #dc3545; font-weight: bold; font-size: 14px;">${thread.unread_count} new</div>` : '<div style="color: #6c757d; font-size: 12px;">Read</div>'}
+                                        </div>
                                     </div>
-                                    <div style="color: #6c757d; font-size: 13px; margin-top: 4px;">
-                                        ${thread.class_name} • ${thread.subject_name}
-                                    </div>
-                                </div>
-                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                                    ${hasUnread ? `<div style="color: #dc3545; font-weight: bold; font-size: 14px;">${thread.unread_count} new</div>` : '<div style="color: #6c757d; font-size: 12px;">Read</div>'}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    }).join('');
-                } else {
-                    // Show empty state
-                    emptyState.style.display = 'block';
-                    notificationPanel.style.display = 'none';
+                                `;
+                                
+                                // Add hover effects
+                                div.addEventListener('mouseover', function() {
+                                    this.style.background = '#f8f9fa';
+                                });
+                                div.addEventListener('mouseout', function() {
+                                    this.style.background = 'white';
+                                });
+                                
+                                // Add click event listener - NO QUOTE ISSUES
+                                div.addEventListener('click', function() {
+                                    openStudentFromNotification(
+                                        thread.student_id, 
+                                        thread.subject_id, 
+                                        thread.student_name, 
+                                        thread.subject_name, 
+                                        '', 
+                                        thread.class_name
+                                    );
+                                });
+                                
+                                notificationList.appendChild(div);
+                            });
+                        }
+                    }
+                } else if (!currentStudent) {
+                    // Show empty state when no threads and no chat open
+                    if (emptyState) emptyState.style.display = 'block';
+                    if (notificationPanel) notificationPanel.style.display = 'none';
                 }
+                // If currentStudent exists, don't show notification panel at all
             } catch (error) {
                 console.error('Error loading conversations:', error);
             }
         }
         
         function openStudentFromNotification(studentId, subjectId, studentName, subjectName, rollNumber, className) {
+            console.log('Opening from notification:', studentName, studentId); // Debug log
+            
             // Set the batch selector
             document.getElementById('feedback-batch-selector').value = className;
             
-            // Load students for that batch first
+            // Load students for that batch first, then open chat
             loadStudentsForFeedback().then(() => {
-                // Then open the chat
+                openFeedbackChat(studentId, subjectId, studentName, subjectName, rollNumber, className);
+            }).catch(err => {
+                console.error('Error loading students from notification:', err);
+                // Try to open chat anyway
                 openFeedbackChat(studentId, subjectId, studentName, subjectName, rollNumber, className);
             });
         }
