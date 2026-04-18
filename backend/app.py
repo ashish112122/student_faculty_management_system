@@ -438,7 +438,11 @@ def send_student_feedback():
             file = request.files['attachment']
             faculty_id = int(request.form.get('faculty_id'))
             subject_id = int(request.form.get('subject_id'))
-            message = request.form.get('message', '')
+            message = request.form.get('message', '').strip()
+            
+            # If no message but has attachment, use default message
+            if not message and file and file.filename:
+                message = '[Attachment]'
             
             attachment_path = None
             attachment_name = None
@@ -458,10 +462,14 @@ def send_student_feedback():
             data = request.get_json()
             faculty_id = data.get('faculty_id')
             subject_id = data.get('subject_id')
-            message = data.get('message')
+            message = data.get('message', '').strip()
             attachment_path = None
             attachment_name = None
             attachment_type = None
+        
+        # Ensure message is not empty or None
+        if not message:
+            message = '[No message]'
         
         cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
         result = cursor.fetchone()
@@ -825,7 +833,7 @@ def get_faculty_feedback_threads():
         faculty_id = result[0]
         
         cursor.execute("""
-            SELECT DISTINCT s.student_id, s.name, s.class_name, sub.subject_id, sub.subject_name,
+            SELECT DISTINCT s.student_id, s.name, s.roll_number, s.class_name, sub.subject_id, sub.subject_name,
                    (SELECT COUNT(*) FROM feedback_messages fm 
                     JOIN feedback_threads ft ON fm.thread_id = ft.thread_id
                     WHERE ft.student_id = s.student_id AND ft.faculty_id = :faculty_id 
@@ -842,10 +850,11 @@ def get_faculty_feedback_threads():
             threads.append({
                 'student_id': row[0],
                 'student_name': row[1],
-                'class_name': row[2],
-                'subject_id': row[3],
-                'subject_name': row[4],
-                'unread_count': row[5]
+                'roll_number': row[2],
+                'class_name': row[3],
+                'subject_id': row[4],
+                'subject_name': row[5],
+                'unread_count': row[6]
             })
         
         return jsonify(threads)
@@ -926,7 +935,11 @@ def send_faculty_feedback():
             file = request.files['attachment']
             student_id = int(request.form.get('student_id'))
             subject_id = int(request.form.get('subject_id'))
-            message = request.form.get('message', '')
+            message = request.form.get('message', '').strip()
+            
+            # If no message but has attachment, use default message
+            if not message and file and file.filename:
+                message = '[Attachment]'
             
             attachment_path = None
             attachment_name = None
@@ -946,10 +959,14 @@ def send_faculty_feedback():
             data = request.get_json()
             student_id = data.get('student_id')
             subject_id = data.get('subject_id')
-            message = data.get('message')
+            message = data.get('message', '').strip()
             attachment_path = None
             attachment_name = None
             attachment_type = None
+        
+        # Ensure message is not empty or None
+        if not message:
+            message = '[No message]'
         
         cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
         result = cursor.fetchone()
@@ -1252,6 +1269,101 @@ def download_attachment(message_id):
     except Exception as e:
         print(f"Error downloading attachment: {str(e)}")
         return jsonify({'message': 'Error downloading file'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Clear Chat Endpoints
+@app.route('/api/student/feedback/clear/<int:faculty_id>/<int:subject_id>', methods=['DELETE'])
+@token_required
+def clear_student_chat(faculty_id, subject_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Get student_id from user_id
+        cursor.execute("SELECT student_id FROM students WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Student not found'}), 404
+        student_id = result[0]
+        
+        # Find the thread
+        cursor.execute("""
+            SELECT thread_id FROM feedback_threads
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
+        
+        thread = cursor.fetchone()
+        if not thread:
+            return jsonify({'message': 'Chat not found'}), 404
+        
+        thread_id = thread[0]
+        
+        # Delete all messages in this thread
+        cursor.execute("DELETE FROM feedback_messages WHERE thread_id = :thread_id", {'thread_id': thread_id})
+        
+        # Update thread last_message_at
+        cursor.execute("""
+            UPDATE feedback_threads 
+            SET last_message_at = SYSDATE, unread_count = 0
+            WHERE thread_id = :thread_id
+        """, {'thread_id': thread_id})
+        
+        conn.commit()
+        return jsonify({'message': 'Chat cleared successfully'}), 200
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"Error clearing chat: {str(e)}")
+        return jsonify({'message': 'Error clearing chat'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/faculty/feedback/clear/<int:student_id>/<int:subject_id>', methods=['DELETE'])
+@token_required
+def clear_faculty_chat(student_id, subject_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Get faculty_id from user_id
+        cursor.execute("SELECT faculty_id FROM faculty WHERE user_id = :user_id", {'user_id': request.user_id})
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'message': 'Faculty not found'}), 404
+        faculty_id = result[0]
+        
+        # Find the thread
+        cursor.execute("""
+            SELECT thread_id FROM feedback_threads
+            WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
+        """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
+        
+        thread = cursor.fetchone()
+        if not thread:
+            return jsonify({'message': 'Chat not found'}), 404
+        
+        thread_id = thread[0]
+        
+        # Delete all messages in this thread
+        cursor.execute("DELETE FROM feedback_messages WHERE thread_id = :thread_id", {'thread_id': thread_id})
+        
+        # Update thread last_message_at
+        cursor.execute("""
+            UPDATE feedback_threads 
+            SET last_message_at = SYSDATE, unread_count = 0
+            WHERE thread_id = :thread_id
+        """, {'thread_id': thread_id})
+        
+        conn.commit()
+        return jsonify({'message': 'Chat cleared successfully'}), 200
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"Error clearing chat: {str(e)}")
+        return jsonify({'message': 'Error clearing chat'}), 500
     finally:
         cursor.close()
         conn.close()

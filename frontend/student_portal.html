@@ -84,9 +84,17 @@
         .chat-thread-item .unread-badge { background: #dc3545; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
         
         /* Chat Main Area */
-        .chat-main-area { flex: 1; display: flex; flex-direction: column; background: #F5F5F5; }
+        .chat-main-area { flex: 1; display: flex; flex-direction: column; background: #F5F5F5; position: relative; }
         .chat-header { padding: 20px; background: white; border-bottom: 1px solid #EAEAEA; }
         .chat-header h2 { color: #2C2C2C; font-size: 20px; }
+        
+        /* Close Button for Chat */
+        .chat-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; color: #4A5568; cursor: pointer; z-index: 10; }
+        .chat-close-btn:hover { color: #dc3545; }
+        
+        /* Clear Chat Button */
+        .clear-chat-btn { position: absolute; top: 15px; right: 60px; background: none; border: none; font-size: 18px; color: #4A5568; cursor: pointer; z-index: 10; padding: 5px 10px; }
+        .clear-chat-btn:hover { color: #dc3545; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
         .chat-message { margin-bottom: 20px; padding: 12px 16px; border-radius: 12px; max-width: 70%; }
         .chat-message.student { background: #3A7BD5; color: white; margin-left: auto; }
@@ -243,6 +251,12 @@
                 
                 <!-- Chat Main Area -->
                 <div class="chat-main-area">
+                    <button class="clear-chat-btn" onclick="clearCurrentChat()" style="display: none;" id="clear-chat-button" title="Clear Chat">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                    <button class="chat-close-btn" onclick="closeChatView()" style="display: none;" id="chat-close-button">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <div class="chat-header">
                         <h2 id="chat-title">Select a chat or start a new one</h2>
                     </div>
@@ -605,6 +619,17 @@
             currentSubject = {id: subjectId, name: subjectName};
             activeThreadId = `${facultyId}_${subjectId}`;
             
+            // Show close button and clear chat button
+            const closeButton = document.getElementById('chat-close-button');
+            if (closeButton) {
+                closeButton.style.display = 'block';
+            }
+            
+            const clearButton = document.getElementById('clear-chat-button');
+            if (clearButton) {
+                clearButton.style.display = 'block';
+            }
+            
             // Update active state in sidebar
             document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
             event.target.closest('.chat-thread-item')?.classList.add('active');
@@ -612,6 +637,68 @@
             document.getElementById('chat-title').textContent = `Chat with ${facultyName} - ${subjectName}`;
             
             loadChatMessages();
+        }
+        
+        function closeChatView() {
+            // Clear active chat state
+            currentFaculty = null;
+            currentSubject = null;
+            activeThreadId = null;
+            
+            // Hide close button and clear button
+            const closeButton = document.getElementById('chat-close-button');
+            if (closeButton) {
+                closeButton.style.display = 'none';
+            }
+            
+            const clearButton = document.getElementById('clear-chat-button');
+            if (clearButton) {
+                clearButton.style.display = 'none';
+            }
+            
+            // Reset chat title
+            document.getElementById('chat-title').textContent = 'Select a chat or start a new one';
+            
+            // Clear chat messages
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            chatMessagesContainer.innerHTML = '<div class="empty-chat-state"><h3><i class="fa-solid fa-comment"></i> No Chat Selected</h3><p>Select a conversation from the left or start a new one</p></div>';
+            
+            // Clear active state from sidebar
+            document.querySelectorAll('.chat-thread-item').forEach(item => item.classList.remove('active'));
+        }
+        
+        async function clearCurrentChat() {
+            if (!currentFaculty || !currentSubject) {
+                alert('No chat selected');
+                return;
+            }
+            
+            const confirmClear = confirm(`Are you sure you want to clear all messages in this chat with ${currentFaculty.name}?\n\nThis action cannot be undone.`);
+            
+            if (!confirmClear) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/student/feedback/clear/${currentFaculty.id}/${currentSubject.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Chat cleared successfully');
+                    // Reload chat messages (will show empty)
+                    await loadChatMessages();
+                } else {
+                    const errorData = await response.json();
+                    alert('Error clearing chat: ' + (errorData.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+                alert('Failed to clear chat. Please try again.');
+            }
         }
         
         let selectedFile = null;
@@ -659,11 +746,16 @@
         }
         
         async function sendMessage() {
+            console.log('=== sendMessage called ===');
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             
+            console.log('Message:', message);
+            console.log('Selected file:', selectedFile ? selectedFile.name : 'none');
+            
+            // Allow sending if either message OR file exists
             if (!message && !selectedFile) {
-                alert('Please enter a message');
+                alert('Please enter a message or select a file');
                 return;
             }
             
@@ -672,28 +764,46 @@
                 return;
             }
             
+            console.log('Sending to faculty:', currentFaculty.id, 'subject:', currentSubject.id);
+            
             try {
                 let response;
                 
                 if (selectedFile) {
-                    // Send with attachment
+                    console.log('Sending with attachment...');
+                    // Send with attachment (message can be empty)
                     const formData = new FormData();
                     formData.append('faculty_id', currentFaculty.id);
                     formData.append('subject_id', currentSubject.id);
-                    formData.append('message', message);
+                    formData.append('message', message); // Can be empty string
                     formData.append('attachment', selectedFile);
+                    
+                    console.log('FormData created with:', {
+                        faculty_id: currentFaculty.id,
+                        subject_id: currentSubject.id,
+                        message: message || '(empty)',
+                        attachment: selectedFile.name
+                    });
                     
                     response = await fetch(`${API_URL}/student/feedback/send`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
+                            // Don't set Content-Type - browser will set it with boundary
                         },
                         body: formData
                     });
                     
+                    console.log('Response status:', response.status);
                     removeAttachment();
                 } else {
-                    // Send without attachment
+                    console.log('Sending without attachment...');
+                    // Send without attachment (message required)
+                    if (!message) {
+                        alert('Please enter a message');
+                        return;
+                    }
+                    
                     response = await fetch(`${API_URL}/student/feedback/send`, {
                         method: 'POST',
                         headers: {
@@ -706,9 +816,12 @@
                             message: message
                         })
                     });
+                    
+                    console.log('Response status:', response.status);
                 }
                 
                 if (response.ok) {
+                    console.log('Message sent successfully');
                     input.value = '';
                     await loadChatMessages();
                     // Scroll to bottom to show new message
@@ -716,6 +829,7 @@
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 } else {
                     const errorData = await response.json();
+                    console.error('Error response:', errorData);
                     alert('Error sending message: ' + (errorData.message || 'Unknown error'));
                 }
             } catch (error) {

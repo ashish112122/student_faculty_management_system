@@ -100,6 +100,10 @@
         .chat-close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; color: #4A5568; cursor: pointer; z-index: 10; }
         .chat-close-btn:hover { color: #dc3545; }
         
+        /* Clear Chat Button */
+        .clear-chat-btn { position: absolute; top: 15px; right: 60px; background: none; border: none; font-size: 18px; color: #4A5568; cursor: pointer; z-index: 10; padding: 5px 10px; }
+        .clear-chat-btn:hover { color: #dc3545; }
+        
         /* Hidden */
         .hidden { display: none; }
         
@@ -254,6 +258,9 @@
                 
                 <!-- Chat Main Area -->
                 <div class="chat-main-area" style="position: relative;">
+                    <button class="clear-chat-btn" onclick="clearCurrentChat()" style="display: none;" id="clear-chat-button" title="Clear Chat">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                     <button class="chat-close-btn" onclick="closeChatView()" style="display: none;" id="chat-close-button">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -812,10 +819,15 @@
                 notificationPanel.style.display = 'none';
             }
             
-            // Show close button
+            // Show close button and clear chat button
             const closeButton = document.getElementById('chat-close-button');
             if (closeButton) {
                 closeButton.style.display = 'block';
+            }
+            
+            const clearButton = document.getElementById('clear-chat-button');
+            if (clearButton) {
+                clearButton.style.display = 'block';
             }
             
             // Update active state in sidebar using data attributes
@@ -853,8 +865,9 @@
             activeThreadId = null;
             sessionStorage.removeItem('activeFeedbackChat');
             
-            // Hide close button
+            // Hide close button and clear button
             document.getElementById('chat-close-button').style.display = 'none';
+            document.getElementById('clear-chat-button').style.display = 'none';
             
             // Reset chat title
             document.getElementById('chat-title').textContent = 'Select a student to view conversation';
@@ -877,6 +890,40 @@
             
             // Show empty state or reload notification panel (now that elements exist)
             loadNewMessagesNotification();
+        }
+        
+        async function clearCurrentChat() {
+            if (!currentStudent || !currentSubject) {
+                alert('No chat selected');
+                return;
+            }
+            
+            const confirmClear = confirm(`Are you sure you want to clear all messages in this chat with ${currentStudent.name}?\n\nThis action cannot be undone.`);
+            
+            if (!confirmClear) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/faculty/feedback/clear/${currentStudent.id}/${currentSubject.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Chat cleared successfully');
+                    // Reload chat messages (will show empty)
+                    await loadChatMessages();
+                } else {
+                    const errorData = await response.json();
+                    alert('Error clearing chat: ' + (errorData.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+                alert('Failed to clear chat. Please try again.');
+            }
         }
         
         let selectedFile = null;
@@ -999,11 +1046,16 @@
         }
         
         async function sendMessage() {
+            console.log('=== sendMessage called ===');
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             
+            console.log('Message:', message);
+            console.log('Selected file:', selectedFile ? selectedFile.name : 'none');
+            
+            // Allow sending if either message OR file exists
             if (!message && !selectedFile) {
-                alert('Please enter a message');
+                alert('Please enter a message or select a file');
                 return;
             }
             
@@ -1012,28 +1064,46 @@
                 return;
             }
             
+            console.log('Sending to student:', currentStudent.id, 'subject:', currentSubject.id);
+            
             try {
                 let response;
                 
                 if (selectedFile) {
-                    // Send with attachment
+                    console.log('Sending with attachment...');
+                    // Send with attachment (message can be empty)
                     const formData = new FormData();
                     formData.append('student_id', currentStudent.id);
                     formData.append('subject_id', currentSubject.id);
-                    formData.append('message', message);
+                    formData.append('message', message); // Can be empty string
                     formData.append('attachment', selectedFile);
+                    
+                    console.log('FormData created with:', {
+                        student_id: currentStudent.id,
+                        subject_id: currentSubject.id,
+                        message: message || '(empty)',
+                        attachment: selectedFile.name
+                    });
                     
                     response = await fetch(`${API_URL}/faculty/feedback/send`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
+                            // Don't set Content-Type - browser will set it with boundary
                         },
                         body: formData
                     });
                     
+                    console.log('Response status:', response.status);
                     removeAttachment();
                 } else {
-                    // Send without attachment
+                    console.log('Sending without attachment...');
+                    // Send without attachment (message required)
+                    if (!message) {
+                        alert('Please enter a message');
+                        return;
+                    }
+                    
                     response = await fetch(`${API_URL}/faculty/feedback/send`, {
                         method: 'POST',
                         headers: {
@@ -1046,9 +1116,12 @@
                             message: message
                         })
                     });
+                    
+                    console.log('Response status:', response.status);
                 }
                 
                 if (response.ok) {
+                    console.log('Message sent successfully');
                     input.value = '';
                     await loadChatMessages();
                     // Scroll to bottom to show new message
@@ -1056,6 +1129,7 @@
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 } else {
                     const errorData = await response.json();
+                    console.error('Error response:', errorData);
                     alert('Error sending message: ' + (errorData.message || 'Unknown error'));
                 }
             } catch (error) {
@@ -1146,7 +1220,7 @@
                                         thread.subject_id, 
                                         thread.student_name, 
                                         thread.subject_name, 
-                                        '', 
+                                        thread.roll_number, 
                                         thread.class_name
                                     );
                                 });
