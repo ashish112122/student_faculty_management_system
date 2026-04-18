@@ -106,16 +106,8 @@
         .chat-input-container { padding: 20px; background: white; border-top: 1px solid #EAEAEA; }
         .chat-input { display: flex; gap: 10px; align-items: center; }
         .chat-input input[type="text"] { flex: 1; padding: 12px; border: 1px solid #EAEAEA; border-radius: 8px; font-size: 14px; }
-        .chat-input input[type="file"] { display: none; }
-        .chat-input .attach-btn { padding: 10px; background: #4A5568; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; }
-        .chat-input .attach-btn:hover { background: #3a4555; }
         .chat-input button { padding: 12px 24px; background: #3A7BD5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .chat-input button:hover { background: #2d5fa8; }
-        .attachment-preview { margin: 10px 0; padding: 10px; background: #f0f7ff; border-radius: 5px; display: none; }
-        .attachment-preview.show { display: block; }
-        .attachment-link { color: #3A7BD5; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
-        .attachment-link:hover { text-decoration: underline; }
-        .attachment-icon { font-size: 16px; }
         .empty-chat-state { text-align: center; padding: 40px; color: #4A5568; }
         .empty-chat-state h3 { margin-bottom: 10px; }
         
@@ -267,13 +259,7 @@
                         </div>
                     </div>
                     <div class="chat-input-container">
-                        <div class="attachment-preview" id="attachment-preview">
-                            <span id="attachment-name"></span>
-                            <button onclick="removeAttachment()" style="margin-left: 10px; padding: 2px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Remove</button>
-                        </div>
                         <div class="chat-input">
-                            <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
-                            <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach file"><i class="fa-solid fa-paperclip"></i></button>
                             <input type="text" id="chat-input" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
                             <button onclick="sendMessage()">Send</button>
                         </div>
@@ -366,35 +352,30 @@
         function showDashboard() {
             hideAllViews();
             document.getElementById('dashboard-view').classList.remove('hidden');
-            saveViewState();
         }
         
         function showMarks() {
             hideAllViews();
             document.getElementById('marks-view').classList.remove('hidden');
             loadMarksSubjects();
-            saveViewState();
         }
         
         function showAttendance() {
             hideAllViews();
             document.getElementById('attendance-view').classList.remove('hidden');
             loadAttendanceSubjects();
-            saveViewState();
         }
         
         function showAlerts() {
             hideAllViews();
             document.getElementById('alerts-view').classList.remove('hidden');
             loadAlerts();
-            saveViewState();
         }
         
         function showFeedback() {
             hideAllViews();
             document.getElementById('feedback-view').classList.remove('hidden');
             loadFeedbackThreads();
-            saveViewState();
         }
         
         async function loadDashboard() {
@@ -668,54 +649,53 @@
         }
         
         async function clearCurrentChat() {
+            console.log('=== clearCurrentChat called ===');
+            
             if (!currentFaculty || !currentSubject) {
+                console.error('No chat selected');
                 alert('No chat selected');
                 return;
             }
             
+            console.log('Current faculty:', currentFaculty);
+            console.log('Current subject:', currentSubject);
+            
             const confirmClear = confirm(`Are you sure you want to clear all messages in this chat with ${currentFaculty.name}?\n\nThis action cannot be undone.`);
             
             if (!confirmClear) {
+                console.log('User cancelled clear chat');
                 return;
             }
             
             try {
-                const response = await fetch(`${API_URL}/student/feedback/clear/${currentFaculty.id}/${currentSubject.id}`, {
+                console.log('Sending DELETE request to clear chat...');
+                const url = `${API_URL}/student/feedback/clear/${currentFaculty.id}/${currentSubject.id}`;
+                console.log('URL:', url);
+                
+                const response = await fetch(url, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
                 
+                console.log('Response status:', response.status);
+                
                 if (response.ok) {
+                    const data = await response.json();
+                    console.log('Response data:', data);
                     alert('Chat cleared successfully');
                     // Reload chat messages (will show empty)
                     await loadChatMessages();
                 } else {
                     const errorData = await response.json();
+                    console.error('Error response:', errorData);
                     alert('Error clearing chat: ' + (errorData.message || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error clearing chat:', error);
-                alert('Failed to clear chat. Please try again.');
+                alert('Failed to clear chat. Please try again.\n\nError: ' + error.message);
             }
-        }
-        
-        let selectedFile = null;
-        
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedFile = file;
-                document.getElementById('attachment-preview').classList.add('show');
-                document.getElementById('attachment-name').innerHTML = `<i class="fa-solid fa-paperclip"></i> ${file.name}`;
-            }
-        }
-        
-        function removeAttachment() {
-            selectedFile = null;
-            document.getElementById('file-input').value = '';
-            document.getElementById('attachment-preview').classList.remove('show');
         }
         
         async function loadChatMessages() {
@@ -730,11 +710,6 @@
                     <div class="chat-message ${m.sender_role} ${m.sender_role === 'faculty' && !m.is_read ? 'unread' : ''}">
                         <div class="sender">${m.sender_role === 'student' ? 'You' : currentFaculty.name}</div>
                         <div class="text">${m.message}</div>
-                        ${m.has_attachment ? `<div class="attachment-link">
-                            <a href="${API_URL}/feedback/attachment/${m.feedback_id}" target="_blank" class="attachment-link">
-                                <i class="fa-solid fa-paperclip attachment-icon"></i> ${m.attachment_name}
-                            </a>
-                        </div>` : ''}
                         <div class="time">${m.created_at}</div>
                     </div>
                 `).join('');
@@ -751,11 +726,9 @@
             const message = input.value.trim();
             
             console.log('Message:', message);
-            console.log('Selected file:', selectedFile ? selectedFile.name : 'none');
             
-            // Allow sending if either message OR file exists
-            if (!message && !selectedFile) {
-                alert('Please enter a message or select a file');
+            if (!message) {
+                alert('Please enter a message');
                 return;
             }
             
@@ -767,58 +740,20 @@
             console.log('Sending to faculty:', currentFaculty.id, 'subject:', currentSubject.id);
             
             try {
-                let response;
-                
-                if (selectedFile) {
-                    console.log('Sending with attachment...');
-                    // Send with attachment (message can be empty)
-                    const formData = new FormData();
-                    formData.append('faculty_id', currentFaculty.id);
-                    formData.append('subject_id', currentSubject.id);
-                    formData.append('message', message); // Can be empty string
-                    formData.append('attachment', selectedFile);
-                    
-                    console.log('FormData created with:', {
+                const response = await fetch(`${API_URL}/student/feedback/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
                         faculty_id: currentFaculty.id,
                         subject_id: currentSubject.id,
-                        message: message || '(empty)',
-                        attachment: selectedFile.name
-                    });
-                    
-                    response = await fetch(`${API_URL}/student/feedback/send`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                            // Don't set Content-Type - browser will set it with boundary
-                        },
-                        body: formData
-                    });
-                    
-                    console.log('Response status:', response.status);
-                    removeAttachment();
-                } else {
-                    console.log('Sending without attachment...');
-                    // Send without attachment (message required)
-                    if (!message) {
-                        alert('Please enter a message');
-                        return;
-                    }
-                    
-                    response = await fetch(`${API_URL}/student/feedback/send`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            faculty_id: currentFaculty.id,
-                            subject_id: currentSubject.id,
-                            message: message
-                        })
-                    });
-                    
-                    console.log('Response status:', response.status);
-                }
+                        message: message
+                    })
+                });
+                
+                console.log('Response status:', response.status);
                 
                 if (response.ok) {
                     console.log('Message sent successfully');
@@ -845,53 +780,8 @@
             window.location.href = 'login_test.html';
         }
         
-        // Save current view state
-        function saveViewState() {
-            const views = ['dashboard-view', 'marks-view', 'subject-marks-view', 'attendance-view', 'subject-attendance-view', 'alerts-view', 'feedback-view'];
-            for (let view of views) {
-                const element = document.getElementById(view);
-                if (element && !element.classList.contains('hidden')) {
-                    sessionStorage.setItem('activeView', view);
-                    break;
-                }
-            }
-        }
-        
-        // Restore view state after refresh
-        function restoreViewState() {
-            console.log('restoreViewState called');
-            const activeView = sessionStorage.getItem('activeView');
-            console.log('Saved view state:', activeView);
-            
-            if (activeView && activeView !== 'dashboard-view') {
-                // Restore the view
-                console.log('Restoring view:', activeView);
-                if (activeView === 'marks-view') {
-                    showMarks();
-                } else if (activeView === 'attendance-view') {
-                    showAttendance();
-                } else if (activeView === 'alerts-view') {
-                    showAlerts();
-                } else if (activeView === 'feedback-view') {
-                    showFeedback();
-                }
-            } else {
-                console.log('Staying on dashboard view');
-            }
-        }
-        
-        console.log('=== Student Portal Initialization ===');
-        console.log('Calling loadDashboard...');
+        // Load dashboard on page load
         loadDashboard();
-        
-        // Restore view state after page load
-        window.addEventListener('load', () => {
-            console.log('Page load event fired');
-            setTimeout(() => {
-                console.log('Restoring view state after 1 second delay');
-                restoreViewState();
-            }, 1000);
-        });
     </script>
 </body>
 </html>

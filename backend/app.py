@@ -1288,6 +1288,8 @@ def clear_student_chat(faculty_id, subject_id):
             return jsonify({'message': 'Student not found'}), 404
         student_id = result[0]
         
+        print(f"Clear chat request - Student: {student_id}, Faculty: {faculty_id}, Subject: {subject_id}")
+        
         # Find the thread
         cursor.execute("""
             SELECT thread_id FROM feedback_threads
@@ -1296,27 +1298,34 @@ def clear_student_chat(faculty_id, subject_id):
         
         thread = cursor.fetchone()
         if not thread:
+            print(f"Thread not found for student {student_id}, faculty {faculty_id}, subject {subject_id}")
             return jsonify({'message': 'Chat not found'}), 404
         
         thread_id = thread[0]
+        print(f"Found thread_id: {thread_id}")
         
         # Delete all messages in this thread
         cursor.execute("DELETE FROM feedback_messages WHERE thread_id = :thread_id", {'thread_id': thread_id})
+        deleted_count = cursor.rowcount
+        print(f"Deleted {deleted_count} messages from thread {thread_id}")
         
-        # Update thread last_message_at
+        # Update thread last_message_at (don't update unread_count as it may not exist)
         cursor.execute("""
             UPDATE feedback_threads 
-            SET last_message_at = SYSDATE, unread_count = 0
+            SET last_message_at = SYSDATE
             WHERE thread_id = :thread_id
         """, {'thread_id': thread_id})
         
         conn.commit()
-        return jsonify({'message': 'Chat cleared successfully'}), 200
+        print(f"Chat cleared successfully for thread {thread_id}")
+        return jsonify({'message': 'Chat cleared successfully', 'deleted_count': deleted_count}), 200
         
     except Exception as e:
         conn.rollback()
         print(f"Error clearing chat: {str(e)}")
-        return jsonify({'message': 'Error clearing chat'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'message': f'Error clearing chat: {str(e)}'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -1335,6 +1344,8 @@ def clear_faculty_chat(student_id, subject_id):
             return jsonify({'message': 'Faculty not found'}), 404
         faculty_id = result[0]
         
+        print(f"Clear chat request - Faculty: {faculty_id}, Student: {student_id}, Subject: {subject_id}")
+        
         # Find the thread
         cursor.execute("""
             SELECT thread_id FROM feedback_threads
@@ -1343,27 +1354,34 @@ def clear_faculty_chat(student_id, subject_id):
         
         thread = cursor.fetchone()
         if not thread:
+            print(f"Thread not found for student {student_id}, faculty {faculty_id}, subject {subject_id}")
             return jsonify({'message': 'Chat not found'}), 404
         
         thread_id = thread[0]
+        print(f"Found thread_id: {thread_id}")
         
         # Delete all messages in this thread
         cursor.execute("DELETE FROM feedback_messages WHERE thread_id = :thread_id", {'thread_id': thread_id})
+        deleted_count = cursor.rowcount
+        print(f"Deleted {deleted_count} messages from thread {thread_id}")
         
-        # Update thread last_message_at
+        # Update thread last_message_at (don't update unread_count as it may not exist)
         cursor.execute("""
             UPDATE feedback_threads 
-            SET last_message_at = SYSDATE, unread_count = 0
+            SET last_message_at = SYSDATE
             WHERE thread_id = :thread_id
         """, {'thread_id': thread_id})
         
         conn.commit()
-        return jsonify({'message': 'Chat cleared successfully'}), 200
+        print(f"Chat cleared successfully for thread {thread_id}")
+        return jsonify({'message': 'Chat cleared successfully', 'deleted_count': deleted_count}), 200
         
     except Exception as e:
         conn.rollback()
         print(f"Error clearing chat: {str(e)}")
-        return jsonify({'message': 'Error clearing chat'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'message': f'Error clearing chat: {str(e)}'}), 500
     finally:
         cursor.close()
         conn.close()
