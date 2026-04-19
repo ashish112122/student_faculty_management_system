@@ -1,6 +1,6 @@
-# 🚀 WORKING LINKS - STUDENT FACULTY MANAGEMENT SYSTEM
+# WORKING LINKS - STUDENT FACULTY MANAGEMENT SYSTEM
 
-## ✅ BACKEND STATUS: RUNNING ✅
+## BACKEND STATUS: RUNNING
 
 **Backend URL:** http://localhost:5000
 
@@ -10,7 +10,7 @@
 
 **Verified:** Backend is responding correctly with CORS enabled
 
-### 🧪 Test Backend Connection First
+### Test Backend Connection First
 
 **Open this test page to verify backend:**
 ```
@@ -21,9 +21,9 @@ This page will automatically test the backend connection and show you if everyth
 
 ---
 
-## 🌐 FRONTEND LINKS
+## FRONTEND LINKS
 
-### 🔐 Login Page (Main Entry Point)
+### Login Page (Main Entry Point)
 
 **File Path:**
 ```
@@ -42,9 +42,9 @@ start C:\Users\vansh\student_faculty_management_system\frontend\login_test.html
 
 ---
 
-## 👤 TEST CREDENTIALS
+## TEST CREDENTIALS
 
-### 🎓 Student Login
+### Student Login
 
 **Email:**
 ```
@@ -65,7 +65,7 @@ pass123
 
 ---
 
-### 👨‍🏫 Faculty Login
+### Faculty Login
 
 **Email:**
 ```
@@ -85,23 +85,23 @@ pass123
 
 ---
 
-## 🔗 DIRECT PORTAL LINKS
+## DIRECT PORTAL LINKS
 
 ### Student Portal (After Login)
 ```
 file:///C:/Users/vansh/student_faculty_management_system/frontend/student_portal.html
 ```
-⚠️ Note: Requires valid token from login
+Note: Requires valid token from login
 
 ### Faculty Portal (After Login)
 ```
 file:///C:/Users/vansh/student_faculty_management_system/frontend/faculty_portal.html
 ```
-⚠️ Note: Requires valid token from login
+Note: Requires valid token from login
 
 ---
 
-## 🧪 BACKEND API ENDPOINTS
+## BACKEND API ENDPOINTS
 
 ### Test Backend Connection
 ```
@@ -126,13 +126,13 @@ GET http://localhost:5000/api/faculty/dashboard
 
 ---
 
-## 📊 SYSTEM INFORMATION
+## SYSTEM INFORMATION
 
 ### Database
 - **Type:** Oracle Database XE
 - **Host:** localhost:1521/XE
 - **User:** system
-- **Status:** ✅ Connected
+- **Status:** Connected
 
 ### Data Populated
 - **Students:** 300 (30 per batch × 10 batches)
@@ -144,7 +144,7 @@ GET http://localhost:5000/api/faculty/dashboard
 
 ---
 
-## 🎯 QUICK START GUIDE
+## QUICK START GUIDE
 
 ### Step 1: Verify Backend
 Open in browser:
@@ -173,7 +173,7 @@ file:///C:/Users/vansh/student_faculty_management_system/frontend/login_test.htm
 
 ---
 
-## 🔄 RESTART BACKEND (If Needed)
+## RESTART BACKEND (If Needed)
 
 ### Stop Backend
 ```powershell
@@ -190,7 +190,7 @@ Backend will start on: http://localhost:5000
 
 ---
 
-## 📱 MORE TEST ACCOUNTS
+## MORE TEST ACCOUNTS
 
 ### Additional Students
 ```
@@ -210,25 +210,25 @@ dr.anil@thaparfac.edu / pass123 (Networks)
 
 ---
 
-## 🎨 FEATURES TO TEST
+## FEATURES TO TEST
 
 ### Student Portal
-✅ View marks with charts (blue/teal colors)
-✅ Daily attendance grid (green=present, red=absent)
-✅ Alerts with color coding (red=unread, yellow=read)
-✅ Real-time feedback chat
-✅ Subject display: "Subject Name — Faculty Name"
+- View marks with charts (blue/teal colors)
+- Daily attendance grid (green=present, red=absent)
+- Alerts with color coding (red=unread, yellow=read)
+- Real-time feedback chat
+- Subject display: "Subject Name — Faculty Name"
 
 ### Faculty Portal
-✅ Batch selection (10 batches)
-✅ Marks entry with validation (max: MST:30, EST:40, Quiz:15, Assignment:15)
-✅ Date-wise attendance (1 Jan - 1 May 2026)
-✅ Load → Mark → Save workflow
-✅ Feedback thread management
+- Batch selection (10 batches)
+- Marks entry with validation (max: MST:30, EST:40, Quiz:15, Assignment:15)
+- Date-wise attendance (1 Jan - 1 May 2026)
+- Load → Mark → Save workflow
+- Feedback thread management
 
 ---
 
-## 🔍 TROUBLESHOOTING
+## TROUBLESHOOTING
 
 ### If You See "Connection Error" in Login Page
 
@@ -280,33 +280,33 @@ python app.py
 
 ---
 
-## 📂 FILE STRUCTURE
+## FILE STRUCTURE
 
 ```
 student_faculty_management_system/
 ├── backend/
-│   ├── app.py (✅ RUNNING on port 5000)
+│   ├── app.py (RUNNING on port 5000)
 │   ├── config.py
 │   └── setup_complete_system.py
 ├── frontend/
-│   ├── login_test.html (🔐 START HERE)
+│   ├── login_test.html (START HERE)
 │   ├── student_portal.html
 │   └── faculty_portal.html
-└── WORKING_LINKS.md (📄 THIS FILE)
+└── WORKING_LINKS.md (THIS FILE)
 ```
 
 ---
 
-## ✅ CURRENT STATUS
+## CURRENT STATUS
 
-- **Backend:** ✅ RUNNING on http://localhost:5000
-- **Frontend:** ✅ READY (Open login_test.html)
-- **Database:** ✅ CONNECTED (Oracle XE)
-- **Data:** ✅ POPULATED (300 students, 5 faculty)
+- **Backend:** RUNNING on http://localhost:5000
+- **Frontend:** READY (Open login_test.html)
+- **Database:** CONNECTED (Oracle XE)
+- **Data:** POPULATED (300 students, 5 faculty)
 
 ---
 
-## 🎯 RECOMMENDED WORKFLOW
+## RECOMMENDED WORKFLOW
 
 1. **Open Backend Check:** http://localhost:5000
 2. **Open Login Page:** file:///C:/Users/vansh/student_faculty_management_system/frontend/login_test.html
@@ -318,12 +318,12 @@ student_faculty_management_system/
 ---
 
 **Last Updated:** April 7, 2026
-**Backend Status:** ✅ RUNNING
-**System Status:** ✅ FULLY OPERATIONAL
+**Backend Status:** RUNNING
+**System Status:** FULLY OPERATIONAL
 
 ---
 
-## 🚀 COPY-PASTE READY LINKS
+## COPY-PASTE READY LINKS
 
 **Backend:**
 ```
@@ -350,6 +350,4 @@ dr.rajesh@thaparfac.edu
 pass123
 ```
 
----
 
-**EVERYTHING IS READY TO USE! 🎉**

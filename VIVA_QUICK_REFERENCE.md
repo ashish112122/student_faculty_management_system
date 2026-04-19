@@ -3,7 +3,7 @@
 
 ---
 
-## 🎯 PROJECT AT A GLANCE
+## PROJECT AT A GLANCE
 
 **Name:** Student-Faculty Management System (SFMS)
 **Database:** Oracle 21c Express Edition
@@ -13,7 +13,7 @@
 
 ---
 
-## 📊 DATABASE STATISTICS
+## DATABASE STATISTICS
 
 | Item | Count |
 |------|-------|
@@ -28,7 +28,7 @@
 
 ---
 
-## 📋 ALL TABLES
+## ALL TABLES
 
 1. **users** - Login credentials (student + faculty)
 2. **students** - Student information
@@ -44,7 +44,7 @@
 
 ---
 
-## 🔗 RELATIONSHIPS
+## RELATIONSHIPS
 
 | From | To | Type | Example |
 |------|-----|------|---------|
@@ -59,42 +59,42 @@
 
 ---
 
-## ⚙️ KEY FEATURES
+## KEY FEATURES
 
 ### Student Portal:
-✅ View marks with charts
-✅ View attendance with percentage
-✅ View alerts (low attendance warnings)
-✅ Chat with faculty
-✅ Clear chat history
+- View marks with charts
+- View attendance with percentage
+- View alerts (low attendance warnings)
+- Chat with faculty
+- Clear chat history
 
 ### Faculty Portal:
-✅ Enter/update marks
-✅ Mark attendance (P/A)
-✅ Chat with students
-✅ View unread messages
-✅ Batch-based management
+- Enter/update marks
+- Mark attendance (P/A)
+- Chat with students
+- View unread messages
+- Batch-based management
 
 ### System Features:
-✅ Automated attendance alerts (< 75%)
-✅ Real-time messaging
-✅ JWT authentication
-✅ Transaction management
+- Automated attendance alerts (< 75%)
+- Real-time messaging
+- JWT authentication
+- Transaction management
 
 ---
 
-## 📐 NORMALIZATION
+## NORMALIZATION
 
 **Level:** BCNF (Boyce-Codd Normal Form)
 
-**1NF:** ✅ All atomic values, no repeating groups
-**2NF:** ✅ No partial dependencies
-**3NF:** ✅ No transitive dependencies
-**BCNF:** ✅ All determinants are candidate keys
+**1NF:** All atomic values, no repeating groups
+**2NF:** No partial dependencies
+**3NF:** No transitive dependencies
+**BCNF:** All determinants are candidate keys
 
 ---
 
-## 🔔 ATTENDANCE ALERT SYSTEM
+## ATTENDANCE ALERT SYSTEM
 
 | Attendance % | Alert Type | Color |
 |--------------|------------|-------|
@@ -107,7 +107,7 @@
 
 ---
 
-## 📝 MARKS DISTRIBUTION
+## MARKS DISTRIBUTION
 
 | Assessment | Maximum Marks |
 |------------|---------------|
@@ -119,7 +119,7 @@
 
 ---
 
-## 🔧 TRIGGER EXPLANATION
+## TRIGGER EXPLANATION
 
 **Name:** `update_thread_timestamp`
 
@@ -143,7 +143,7 @@ END;
 
 ---
 
-## 💾 SQL OPERATIONS USED
+## SQL OPERATIONS USED
 
 ### DDL (Data Definition Language):
 - CREATE TABLE
@@ -166,7 +166,7 @@ END;
 
 ---
 
-## 🎓 COMMON VIVA QUESTIONS & ANSWERS
+## COMMON VIVA QUESTIONS & ANSWERS
 
 ### Q1: What is the objective of your project?
 **A:** To create a digital platform for managing student-faculty interactions, tracking academic performance (marks and attendance), and facilitating communication through a real-time chat system.
@@ -235,7 +235,7 @@ HAVING (SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) / COUNT(*)) < 0.75;
 
 ---
 
-## 🚀 PROJECT FLOW
+## PROJECT FLOW
 
 ```
 Login → Authentication → Dashboard → Feature Selection → Data Operations → Response
@@ -256,7 +256,7 @@ Login → Authentication → Dashboard → Feature Selection → Data Operations
 
 ---
 
-## 📱 DEMO CREDENTIALS
+## DEMO CREDENTIALS
 
 **Students:**
 - rohan.sharma@thapar.edu / password123
@@ -268,7 +268,7 @@ Login → Authentication → Dashboard → Feature Selection → Data Operations
 
 ---
 
-## ✅ PROJECT COMPLETION CHECKLIST
+## PROJECT COMPLETION CHECKLIST
 
 - [x] Database design (11 tables)
 - [x] Normalization (BCNF)
@@ -290,9 +290,9 @@ Login → Authentication → Dashboard → Feature Selection → Data Operations
 
 ---
 
-**Status:** ✅ Complete and Production Ready
-**Documentation:** ✅ Comprehensive
-**Viva Preparation:** ✅ Ready
+**Status:** Complete and Production Ready
+**Documentation:** Comprehensive
+**Viva Preparation:** Ready
 
 ---
 
