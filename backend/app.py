@@ -379,9 +379,10 @@ def get_student_feedback_thread(faculty_id, subject_id):
         
         student_id = result[0]
         
-        # Get thread
+        # Get thread with clear timestamps
         cursor.execute("""
-            SELECT thread_id FROM feedback_threads
+            SELECT thread_id, cleared_by_student, cleared_by_faculty
+            FROM feedback_threads
             WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
         """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
         
@@ -390,15 +391,25 @@ def get_student_feedback_thread(faculty_id, subject_id):
             return jsonify([])
         
         thread_id = thread[0]
+        cleared_by_student = thread[1]
         
-        # Get messages
-        cursor.execute("""
-            SELECT message_id, sender_role, message, is_read, created_at, 
-                   attachment_path, attachment_name, attachment_type
-            FROM feedback_messages
-            WHERE thread_id = :thread_id
-            ORDER BY created_at ASC
-        """, {'thread_id': thread_id})
+        # Get messages created after student cleared chat (or all if never cleared)
+        if cleared_by_student:
+            cursor.execute("""
+                SELECT message_id, sender_role, message, is_read, created_at, 
+                       attachment_path, attachment_name, attachment_type
+                FROM feedback_messages
+                WHERE thread_id = :thread_id AND created_at > :cleared_time
+                ORDER BY created_at ASC
+            """, {'thread_id': thread_id, 'cleared_time': cleared_by_student})
+        else:
+            cursor.execute("""
+                SELECT message_id, sender_role, message, is_read, created_at, 
+                       attachment_path, attachment_name, attachment_type
+                FROM feedback_messages
+                WHERE thread_id = :thread_id
+                ORDER BY created_at ASC
+            """, {'thread_id': thread_id})
         
         messages = []
         for row in cursor.fetchall():
@@ -876,9 +887,10 @@ def get_faculty_feedback_thread(student_id, subject_id):
         
         faculty_id = result[0]
         
-        # Get thread
+        # Get thread with clear timestamps
         cursor.execute("""
-            SELECT thread_id FROM feedback_threads
+            SELECT thread_id, cleared_by_student, cleared_by_faculty
+            FROM feedback_threads
             WHERE student_id = :student_id AND faculty_id = :faculty_id AND subject_id = :subject_id
         """, {'student_id': student_id, 'faculty_id': faculty_id, 'subject_id': subject_id})
         
@@ -887,15 +899,25 @@ def get_faculty_feedback_thread(student_id, subject_id):
             return jsonify([])
         
         thread_id = thread[0]
+        cleared_by_faculty = thread[2]
         
-        # Get messages
-        cursor.execute("""
-            SELECT message_id, sender_role, message, is_read, created_at, 
-                   attachment_path, attachment_name, attachment_type
-            FROM feedback_messages
-            WHERE thread_id = :thread_id
-            ORDER BY created_at ASC
-        """, {'thread_id': thread_id})
+        # Get messages created after faculty cleared chat (or all if never cleared)
+        if cleared_by_faculty:
+            cursor.execute("""
+                SELECT message_id, sender_role, message, is_read, created_at, 
+                       attachment_path, attachment_name, attachment_type
+                FROM feedback_messages
+                WHERE thread_id = :thread_id AND created_at > :cleared_time
+                ORDER BY created_at ASC
+            """, {'thread_id': thread_id, 'cleared_time': cleared_by_faculty})
+        else:
+            cursor.execute("""
+                SELECT message_id, sender_role, message, is_read, created_at, 
+                       attachment_path, attachment_name, attachment_type
+                FROM feedback_messages
+                WHERE thread_id = :thread_id
+                ORDER BY created_at ASC
+            """, {'thread_id': thread_id})
         
         messages = []
         for row in cursor.fetchall():
@@ -1273,7 +1295,7 @@ def download_attachment(message_id):
         cursor.close()
         conn.close()
 
-# Clear Chat Endpoints
+# Clear Chat Endpoints (User-Specific)
 @app.route('/api/student/feedback/clear/<int:faculty_id>/<int:subject_id>', methods=['DELETE'])
 @token_required
 def clear_student_chat(faculty_id, subject_id):
@@ -1304,21 +1326,17 @@ def clear_student_chat(faculty_id, subject_id):
         thread_id = thread[0]
         print(f"Found thread_id: {thread_id}")
         
-        # Delete all messages in this thread
-        cursor.execute("DELETE FROM feedback_messages WHERE thread_id = :thread_id", {'thread_id': thread_id})
-        deleted_count = cursor.rowcount
-        print(f"Deleted {deleted_count} messages from thread {thread_id}")
-        
-        # Update thread last_message_at (don't update unread_count as it may not exist)
+        # Soft delete: Update cleared_by_student timestamp
+        # Messages created before this timestamp will be hidden for student
         cursor.execute("""
             UPDATE feedback_threads 
-            SET last_message_at = SYSDATE
+            SET cleared_by_student = SYSDATE
             WHERE thread_id = :thread_id
         """, {'thread_id': thread_id})
         
         conn.commit()
-        print(f"Chat cleared successfully for thread {thread_id}")
-        return jsonify({'message': 'Chat cleared successfully', 'deleted_count': deleted_count}), 200
+        print(f"Chat cleared for student in thread {thread_id}")
+        return jsonify({'message': 'Chat cleared successfully'}), 200
         
     except Exception as e:
         conn.rollback()
@@ -1360,21 +1378,17 @@ def clear_faculty_chat(student_id, subject_id):
         thread_id = thread[0]
         print(f"Found thread_id: {thread_id}")
         
-        # Delete all messages in this thread
-        cursor.execute("DELETE FROM feedback_messages WHERE thread_id = :thread_id", {'thread_id': thread_id})
-        deleted_count = cursor.rowcount
-        print(f"Deleted {deleted_count} messages from thread {thread_id}")
-        
-        # Update thread last_message_at (don't update unread_count as it may not exist)
+        # Soft delete: Update cleared_by_faculty timestamp
+        # Messages created before this timestamp will be hidden for faculty
         cursor.execute("""
             UPDATE feedback_threads 
-            SET last_message_at = SYSDATE
+            SET cleared_by_faculty = SYSDATE
             WHERE thread_id = :thread_id
         """, {'thread_id': thread_id})
         
         conn.commit()
-        print(f"Chat cleared successfully for thread {thread_id}")
-        return jsonify({'message': 'Chat cleared successfully', 'deleted_count': deleted_count}), 200
+        print(f"Chat cleared for faculty in thread {thread_id}")
+        return jsonify({'message': 'Chat cleared successfully'}), 200
         
     except Exception as e:
         conn.rollback()

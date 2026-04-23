@@ -1,13 +1,3 @@
--- Updated Feedback System with Thread Support
--- This allows both students and faculty to initiate conversations
--- Multiple independent threads between same student-faculty pair
-
--- Drop existing feedback table if updating
--- DROP TABLE feedback CASCADE CONSTRAINTS;
--- DROP SEQUENCE feedback_seq;
--- DROP TABLE feedback_threads CASCADE CONSTRAINTS;
--- DROP SEQUENCE feedback_threads_seq;
-
 -- Feedback Threads Table (stores conversation metadata)
 CREATE TABLE feedback_threads (
     thread_id NUMBER PRIMARY KEY,
@@ -18,6 +8,8 @@ CREATE TABLE feedback_threads (
     initiated_by VARCHAR2(20) NOT NULL CHECK (initiated_by IN ('student', 'faculty')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    cleared_by_student TIMESTAMP DEFAULT NULL,
+    cleared_by_faculty TIMESTAMP DEFAULT NULL,
     FOREIGN KEY (student_id) REFERENCES students(student_id),
     FOREIGN KEY (faculty_id) REFERENCES faculty(faculty_id),
     FOREIGN KEY (subject_id) REFERENCES subjects(subject_id)
