@@ -11,9 +11,9 @@ DB_CONFIG = {
 }
 
 def test_clear_chat():
-    print("=" * 80)
+    print("-" * 80)
     print("TESTING USER-SPECIFIC CLEAR CHAT FEATURE")
-    print("=" * 80)
+    print("-" * 80)
     
     conn = oracledb.connect(**DB_CONFIG)
     cursor = conn.cursor()
@@ -31,11 +31,11 @@ def test_clear_chat():
         
         columns = cursor.fetchall()
         if len(columns) == 2:
-            print("   ✓ Both columns exist:")
+            print("   Both columns exist:")
             for col in columns:
                 print(f"     - {col[0]}: {col[1]}")
         else:
-            print(f"   ✗ ERROR: Expected 2 columns, found {len(columns)}")
+            print(f"   ERROR: Expected 2 columns, found {len(columns)}")
             return False
         
         # 2. Check if any threads have been cleared
@@ -77,9 +77,9 @@ def test_clear_chat():
         total_messages = cursor.fetchone()[0]
         print(f"   Total messages in database: {total_messages}")
         
-        print("\n" + "=" * 80)
-        print("DATABASE STRUCTURE: ✓ READY")
-        print("=" * 80)
+        print("\n" + "-" * 80)
+        print("DATABASE STRUCTURE: READY")
+        print("-" * 80)
         print("\nNext Steps:")
         print("1. Start backend: python backend/app.py")
         print("2. Open two browsers (student + faculty)")
@@ -89,7 +89,7 @@ def test_clear_chat():
         return True
         
     except Exception as e:
-        print(f"\n✗ Error: {str(e)}")
+        print(f"\nError: {str(e)}")
         import traceback
         traceback.print_exc()
         return False

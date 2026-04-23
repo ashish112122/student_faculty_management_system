@@ -26,13 +26,13 @@ def check_columns():
         columns = cursor.fetchall()
         
         if len(columns) == 2:
-            print("✓ Clear chat columns exist:")
+            print("Clear chat columns exist:")
             for col in columns:
                 print(f"  - {col[0]}: {col[1]}")
-            print("\n✓ User-specific clear chat feature is ready!")
+            print("\nUser-specific clear chat feature is ready!")
             return True
         else:
-            print("✗ Clear chat columns NOT found!")
+            print("Clear chat columns NOT found!")
             print(f"  Found {len(columns)} columns instead of 2")
             if columns:
                 for col in columns:

@@ -22,9 +22,9 @@ FIRST_NAMES = ['Rohan', 'Priya', 'Amit', 'Sneha', 'Rahul', 'Anjali', 'Vikram', '
 LAST_NAMES = ['Sharma', 'Patel', 'Kumar', 'Gupta', 'Verma', 'Singh', 'Reddy', 'Joshi', 'Mehta', 'Nair']
 
 def setup_system():
-    print("=" * 80)
+    print("-" * 80)
     print("SETTING UP COMPLETE SYSTEM")
-    print("=" * 80)
+    print("-" * 80)
     
     conn = oracledb.connect(**DB_CONFIG)
     cursor = conn.cursor()
@@ -404,9 +404,9 @@ def setup_system():
     cursor.close()
     conn.close()
     
-    print("\n" + "=" * 80)
+    print("\n" + "-" * 80)
     print("SETUP COMPLETE!")
-    print("=" * 80)
+    print("-" * 80)
     print(f"\nSummary:")
     print(f"  Faculty: 5 (1 subject each, 3 batches each)")
     print(f"  Students: 300 (30 per batch, semester 4)")

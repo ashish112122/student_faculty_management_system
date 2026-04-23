@@ -11,9 +11,9 @@ DB_CONFIG = {
 }
 
 def add_clear_chat_columns():
-    print("=" * 80)
+    print("-" * 80)
     print("ADDING CLEAR CHAT COLUMNS")
-    print("=" * 80)
+    print("-" * 80)
     
     conn = oracledb.connect(**DB_CONFIG)
     cursor = conn.cursor()
@@ -61,11 +61,11 @@ def add_clear_chat_columns():
         
         columns = cursor.fetchall()
         for col in columns:
-            print(f"   ✓ {col[0]}")
+            print(f"   {col[0]}")
         
-        print("\n" + "=" * 80)
+        print("\n" + "-" * 80)
         print("COLUMNS ADDED SUCCESSFULLY!")
-        print("=" * 80)
+        print("-" * 80)
         print("\nNew columns:")
         print("  - cleared_by_student: Timestamp when student cleared chat")
         print("  - cleared_by_faculty: Timestamp when faculty cleared chat")
