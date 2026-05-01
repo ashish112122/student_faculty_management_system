@@ -64,7 +64,7 @@ Server starts at: http://localhost:5000
 ### Step 5: Open Frontend
 
 Open any of these in your browser:
-
+-Right click on the login_test.html file and open it with server
 - Login page: http://localhost:5000/login_test.html
 - Student portal: http://localhost:5000/student_portal.html
 - Faculty portal: http://localhost:5000/faculty_portal.html
