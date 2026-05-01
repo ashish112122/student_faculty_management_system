@@ -187,7 +187,7 @@ CREATE INDEX idx_feedback_messages_sender ON feedback_messages(sender_id);
 -- 9. TRIGGERS
 -- ============================================================================
 
--- Trigger to update last_message_at when new message is added
+-- Trigger 1: Keep feedback thread last_message_at up to date
 CREATE OR REPLACE TRIGGER update_thread_timestamp
 AFTER INSERT ON feedback_messages
 FOR EACH ROW
@@ -195,6 +195,70 @@ BEGIN
     UPDATE feedback_threads
     SET last_message_at = CURRENT_TIMESTAMP
     WHERE thread_id = :NEW.thread_id;
+END;
+/
+
+-- Trigger 2: Auto-generate attendance alerts when attendance is inserted or updated
+-- Calculates percentage in SQL and inserts/updates alert if below threshold
+CREATE OR REPLACE TRIGGER trg_attendance_alert
+AFTER INSERT OR UPDATE ON attendance
+FOR EACH ROW
+DECLARE
+    v_total        NUMBER;
+    v_present      NUMBER;
+    v_percentage   NUMBER;
+    v_alert_type   VARCHAR2(20);
+    v_message      VARCHAR2(500);
+    v_subject_name VARCHAR2(100);
+    v_existing     NUMBER;
+BEGIN
+    SELECT COUNT(*),
+           SUM(CASE WHEN status = 'P' THEN 1 ELSE 0 END)
+    INTO v_total, v_present
+    FROM attendance
+    WHERE student_id = :NEW.student_id
+      AND subject_id = :NEW.subject_id;
+
+    IF v_total = 0 THEN RETURN; END IF;
+
+    v_percentage := ROUND((v_present / v_total) * 100, 2);
+
+    SELECT subject_name INTO v_subject_name
+    FROM subjects WHERE subject_id = :NEW.subject_id;
+
+    IF v_percentage < 50 THEN
+        v_alert_type := 'Critical';
+        v_message := 'Low attendance in ' || v_subject_name || ': ' || v_percentage || '%. Attendance is critically low.';
+    ELSIF v_percentage < 65 THEN
+        v_alert_type := 'Alert';
+        v_message := 'Low attendance in ' || v_subject_name || ': ' || v_percentage || '%. Immediate action required.';
+    ELSIF v_percentage < 75 THEN
+        v_alert_type := 'Warning';
+        v_message := 'Low attendance in ' || v_subject_name || ': ' || v_percentage || '%. Please improve attendance.';
+    ELSE
+        RETURN;
+    END IF;
+
+    SELECT COUNT(*) INTO v_existing
+    FROM alerts
+    WHERE student_id = :NEW.student_id
+      AND subject_id = :NEW.subject_id
+      AND alert_type = v_alert_type;
+
+    IF v_existing = 0 THEN
+        INSERT INTO alerts (alert_id, student_id, subject_id, alert_type, message, is_read, created_at)
+        VALUES (alerts_seq.NEXTVAL, :NEW.student_id, :NEW.subject_id, v_alert_type, v_message, 0, SYSDATE);
+    ELSE
+        UPDATE alerts
+        SET message = v_message, is_read = 0, created_at = SYSDATE
+        WHERE student_id = :NEW.student_id
+          AND subject_id  = :NEW.subject_id
+          AND alert_type  = v_alert_type;
+    END IF;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN NULL;
+    WHEN OTHERS THEN NULL;
 END;
 /
 
@@ -218,7 +282,9 @@ END;
 
 -- Total Sequences: 10
 -- Total Indexes: 5
--- Total Triggers: 1
+-- Total Triggers: 2
+--   1. update_thread_timestamp  (AFTER INSERT ON feedback_messages)
+--   2. trg_attendance_alert     (AFTER INSERT OR UPDATE ON attendance)
 
 -- To initialize database with sample data, run:
 -- python backend/setup_complete_system.py

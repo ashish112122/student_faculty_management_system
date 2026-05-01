@@ -239,28 +239,35 @@ def get_student_subject_attendance(subject_id):
         
         student_id = result[0]
         
+        # Fetch records and calculate percentage entirely in SQL
         cursor.execute("""
             SELECT attendance_date, status
             FROM attendance
             WHERE student_id = :student_id AND subject_id = :subject_id
             ORDER BY attendance_date ASC
         """, {'student_id': student_id, 'subject_id': subject_id})
-        
+
         records = []
-        present = 0
-        total = 0
-        
         for row in cursor.fetchall():
             records.append({
                 'date': row[0].strftime('%Y-%m-%d'),
                 'status': 'Present' if row[1] == 'P' else 'Absent'
             })
-            total += 1
-            if row[1] == 'P':
-                present += 1
-        
-        percentage = round((present / total) * 100, 2) if total > 0 else 0
-        
+
+        # Attendance percentage calculated using SQL aggregation
+        cursor.execute("""
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN status = 'P' THEN 1 ELSE 0 END) AS present,
+                   ROUND(SUM(CASE WHEN status = 'P' THEN 1 ELSE 0 END) / COUNT(*) * 100, 2) AS percentage
+            FROM attendance
+            WHERE student_id = :student_id AND subject_id = :subject_id
+        """, {'student_id': student_id, 'subject_id': subject_id})
+
+        stats = cursor.fetchone()
+        total      = int(stats[0]) if stats[0] else 0
+        present    = int(stats[1]) if stats[1] else 0
+        percentage = float(stats[2]) if stats[2] else 0.0
+
         return jsonify({
             'records': records,
             'present': present,
@@ -1220,46 +1227,13 @@ def mark_batch_attendance():
         conn.close()
 
 def update_attendance_alerts(cursor, conn, subject_id, class_name):
-    """Update alerts for students with low attendance"""
-    try:
-        # Get students with low attendance
-        cursor.execute("""
-            SELECT s.student_id, sub.subject_name,
-                   COUNT(*) as total,
-                   SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) as present
-            FROM students s
-            JOIN attendance a ON s.student_id = a.student_id
-            JOIN subjects sub ON a.subject_id = sub.subject_id
-            WHERE s.class_name = :class_name AND a.subject_id = :subject_id
-            GROUP BY s.student_id, sub.subject_name
-            HAVING (SUM(CASE WHEN a.status = 'P' THEN 1 ELSE 0 END) / COUNT(*)) < 0.75
-        """, {'class_name': class_name, 'subject_id': subject_id})
-        
-        for student_id, subject_name, total, present in cursor.fetchall():
-            percentage = round((present / total) * 100, 2)
-            alert_type = 'Critical' if percentage < 50 else 'Warning'
-            message = f"Low attendance in {subject_name}: {percentage}%"
-            
-            # Check if alert already exists
-            cursor.execute("""
-                SELECT alert_id FROM alerts 
-                WHERE student_id = :student_id AND subject_id = :subject_id AND alert_type = :alert_type
-            """, {'student_id': student_id, 'subject_id': subject_id, 'alert_type': alert_type})
-            
-            if not cursor.fetchone():
-                cursor.execute("""
-                    INSERT INTO alerts (alert_id, student_id, subject_id, alert_type, message, is_read, created_at)
-                    VALUES (alerts_seq.NEXTVAL, :student_id, :subject_id, :alert_type, :message, 0, SYSDATE)
-                """, {
-                    'student_id': student_id,
-                    'subject_id': subject_id,
-                    'alert_type': alert_type,
-                    'message': message
-                })
-        
-        conn.commit()
-    except Exception as e:
-        print(f"Error updating alerts: {str(e)}")
+    """
+    Alert generation is now handled automatically by the database trigger
+    trg_attendance_alert (AFTER INSERT OR UPDATE ON attendance).
+    This function is kept for compatibility but no longer needs to run
+    manual alert logic.
+    """
+    pass
 
 # Download attachment endpoint
 @app.route('/api/feedback/attachment/<int:message_id>', methods=['GET'])
