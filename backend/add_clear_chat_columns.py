@@ -11,9 +11,7 @@ DB_CONFIG = {
 }
 
 def add_clear_chat_columns():
-    print("-" * 80)
     print("ADDING CLEAR CHAT COLUMNS")
-    print("-" * 80)
     
     conn = oracledb.connect(**DB_CONFIG)
     cursor = conn.cursor()

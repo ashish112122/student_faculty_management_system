@@ -1,14 +1,4 @@
--- Fix Faculty-Batch Assignments
--- This script corrects the faculty_classes table to assign each faculty to ALL 10 batches
--- Current: Each faculty has 3 batches (15 total records)
--- Required: Each faculty has 10 batches (50 total records)
-
--- Step 1: Delete existing assignments
-DELETE FROM faculty_classes;
-
--- Step 2: Insert corrected assignments
--- Each faculty teaches their subject to ALL 10 batches
-
+-- Required:Each faculty has 10 batches (50 total records)
 -- Faculty 1 (faculty_id=1, subject_id=1: Data Structures)
 INSERT INTO faculty_classes (faculty_class_id, faculty_id, subject_id, class_name)
 VALUES (faculty_classes_seq.NEXTVAL, 1, 1, '2Q31');

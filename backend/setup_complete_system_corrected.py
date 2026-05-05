@@ -1,7 +1,3 @@
-"""
-Complete system setup with CORRECTED faculty-batch assignments
-Each faculty teaches their subject to ALL 10 batches
-"""
 import oracledb
 from config import Config
 from datetime import datetime, timedelta

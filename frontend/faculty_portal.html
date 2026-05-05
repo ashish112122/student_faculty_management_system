@@ -199,7 +199,7 @@
                 <h1 id="attendance-entry-title">Mark Attendance</h1>
                 <div style="margin: 15px 0;">
                     <label for="attendance-date" style="margin-right: 10px; font-weight: bold;">Select Date:</label>
-                    <input type="date" id="attendance-date" min="2026-01-01" max="2026-05-01" style="padding: 8px; border: 1px solid #EAEAEA; border-radius: 5px;">
+                    <input type="date" id="attendance-date" min="2026-01-01" style="padding: 8px; border: 1px solid #EAEAEA; border-radius: 5px;">
                     <button class="btn" onclick="loadAttendanceForDate()" style="margin-left: 10px;"><i class="fa-solid fa-clipboard-user"></i> Load Attendance</button>
                 </div>
                 <button class="btn btn-back" onclick="showAttendance()"><i class="fa-solid fa-arrow-left"></i> Back to Batches</button>
@@ -658,9 +658,11 @@
             document.getElementById('attendance-entry-view').classList.remove('hidden');
             document.getElementById('attendance-entry-title').textContent = `${subject.subject_name} - ${batch}`;
             
-            // Set default date to today
+            // Set default date to today and set max to today
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('attendance-date').value = today;
+            const dateInput = document.getElementById('attendance-date');
+            dateInput.value = today;
+            dateInput.max = today;
             
             // Load attendance for today
             await loadAttendanceForDate();

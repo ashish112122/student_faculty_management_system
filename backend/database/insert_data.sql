@@ -1,9 +1,3 @@
--- Sample Data Insertion for Student-Faculty Management System
--- This file contains INSERT statements for populating the database with sample data
-
--- Note: For production use, run backend/setup_complete_system.py which generates
--- 300 students, 5 faculty, and complete attendance/marks data programmatically
-
 -- Insert Sample Users (Faculty)
 INSERT INTO users (user_id, email, password, name, role)
 VALUES (users_seq.NEXTVAL, 'dr.rajesh@thaparfac.edu', 'pass123', 'Dr. Rajesh Kumar', 'faculty');
@@ -154,5 +148,3 @@ VALUES (alerts_seq.NEXTVAL, 1, 1, 'Warning', 'Low attendance in Data Structures:
 
 COMMIT;
 
--- Note: For complete data population with 300 students, run:
--- python backend/setup_complete_system.py

@@ -1,14 +1,4 @@
--- ============================================================================
--- COMPLETE DATABASE SCHEMA
--- Student-Faculty Management System
--- Oracle Database 21c
--- ============================================================================
--- This file contains ALL table definitions in one place for easy reference
--- ============================================================================
-
--- ============================================================================
 -- 1. AUTHENTICATION MODULE
--- ============================================================================
 
 -- Users Table (Central authentication for all users)
 CREATE TABLE users (
@@ -21,9 +11,7 @@ CREATE TABLE users (
 
 CREATE SEQUENCE users_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 2. STUDENT MODULE
--- ============================================================================
 
 -- Students Table (Student-specific information)
 CREATE TABLE students (
@@ -48,9 +36,7 @@ CREATE TABLE subjects (
 
 CREATE SEQUENCE subjects_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 3. FACULTY MODULE
--- ============================================================================
 
 -- Faculty Table (Faculty-specific information)
 CREATE TABLE faculty (
@@ -75,9 +61,7 @@ CREATE TABLE faculty_classes (
 
 CREATE SEQUENCE faculty_classes_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 4. MARKS MODULE
--- ============================================================================
 
 -- Marks Table (Student assessment marks)
 CREATE TABLE marks (
@@ -94,10 +78,7 @@ CREATE TABLE marks (
 
 CREATE SEQUENCE marks_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 5. ATTENDANCE MODULE
--- ============================================================================
-
 -- Attendance Table (Daily attendance records)
 CREATE TABLE attendance (
     attendance_id NUMBER PRIMARY KEY,
@@ -112,9 +93,7 @@ CREATE TABLE attendance (
 
 CREATE SEQUENCE attendance_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 6. ALERTS MODULE
--- ============================================================================
 
 -- Alerts Table (System-generated notifications)
 CREATE TABLE alerts (
@@ -131,9 +110,7 @@ CREATE TABLE alerts (
 
 CREATE SEQUENCE alerts_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 7. FEEDBACK/CHAT MODULE
--- ============================================================================
 
 -- Feedback Threads Table (Conversation metadata)
 CREATE TABLE feedback_threads (
@@ -172,9 +149,7 @@ CREATE TABLE feedback_messages (
 
 CREATE SEQUENCE feedback_messages_seq START WITH 1 INCREMENT BY 1;
 
--- ============================================================================
 -- 8. INDEXES FOR PERFORMANCE
--- ============================================================================
 
 -- Feedback system indexes
 CREATE INDEX idx_feedback_threads_student ON feedback_threads(student_id);
@@ -182,10 +157,7 @@ CREATE INDEX idx_feedback_threads_faculty ON feedback_threads(faculty_id);
 CREATE INDEX idx_feedback_threads_subject ON feedback_threads(subject_id);
 CREATE INDEX idx_feedback_messages_thread ON feedback_messages(thread_id);
 CREATE INDEX idx_feedback_messages_sender ON feedback_messages(sender_id);
-
--- ============================================================================
 -- 9. TRIGGERS
--- ============================================================================
 
 -- Trigger 1: Keep feedback thread last_message_at up to date
 CREATE OR REPLACE TRIGGER update_thread_timestamp
@@ -262,10 +234,6 @@ EXCEPTION
 END;
 /
 
--- ============================================================================
--- END OF SCHEMA
--- ============================================================================
-
 -- SUMMARY:
 -- Total Tables: 11
 -- 1. users (authentication)
@@ -286,5 +254,3 @@ END;
 --   1. update_thread_timestamp  (AFTER INSERT ON feedback_messages)
 --   2. trg_attendance_alert     (AFTER INSERT OR UPDATE ON attendance)
 
--- To initialize database with sample data, run:
--- python backend/setup_complete_system.py

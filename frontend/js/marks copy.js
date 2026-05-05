@@ -155,7 +155,7 @@ function renderCurveChart(students) {
   var labels = ["0-9","10-19","20-29","30-39","40-49","50-59","60-69","70-79","80-89","90-100"];
   students.forEach(function(r) {
     var idx = Math.min(Math.floor(r.marks_obtained / 10), 9);
-    bins[idx]++;
+    bins[idx];
   });
 
   curveChart = new Chart(canvas.getContext("2d"), {

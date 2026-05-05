@@ -1,15 +1,8 @@
--- ============================================================================
 -- DATABASE TRIGGERS
--- Student-Faculty Management System
--- Oracle Database 21c
--- ============================================================================
-
--- ============================================================================
 -- TRIGGER 1: update_thread_timestamp
 -- Purpose : Keep feedback thread metadata current
 -- Table   : feedback_messages
 -- Event   : AFTER INSERT
--- ============================================================================
 
 CREATE OR REPLACE TRIGGER update_thread_timestamp
 AFTER INSERT ON feedback_messages
@@ -21,13 +14,11 @@ BEGIN
 END;
 /
 
--- ============================================================================
 -- TRIGGER 2: trg_attendance_alert
 -- Purpose : Automatically generate alerts when attendance falls below threshold
 -- Table   : attendance
 -- Event   : AFTER INSERT OR UPDATE
 -- Fires   : Once per row, after each attendance record is inserted or updated
--- ============================================================================
 
 CREATE OR REPLACE TRIGGER trg_attendance_alert
 AFTER INSERT OR UPDATE ON attendance
@@ -124,7 +115,3 @@ EXCEPTION
         NULL; -- Do not let trigger failure break attendance marking
 END;
 /
-
--- ============================================================================
--- END OF TRIGGERS
--- ============================================================================
